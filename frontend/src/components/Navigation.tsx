@@ -18,6 +18,7 @@ import {
   QrCode, 
   Archive, 
   BarChart,
+  CheckCircle,
   Menu as MenuIcon
 } from '@mui/icons-material';
 import Link from 'next/link';
@@ -95,6 +96,20 @@ const Navigation: React.FC = () => {
             <SmartToy sx={{ mr: 1 }} />
             AI助手
           </Button>
+          <Button 
+            color="inherit" 
+            component={Link} 
+            href="/approval-management"
+            sx={{ 
+              bgcolor: isActive('/approval-management') ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+              '&:hover': {
+                bgcolor: 'rgba(255, 255, 255, 0.2)'
+              }
+            }}
+          >
+            <CheckCircle sx={{ mr: 1 }} />
+            审批管理
+          </Button>
         </Box>
         
         {/* 移动端导航菜单 */}
@@ -149,6 +164,15 @@ const Navigation: React.FC = () => {
           >
             <SmartToy sx={{ mr: 1 }} />
             AI助手
+          </MenuItem>
+          <MenuItem 
+            onClick={handleMenuClose}
+            component={Link} 
+            href="/approval-management"
+            selected={isActive('/approval-management')}
+          >
+            <CheckCircle sx={{ mr: 1 }} />
+            审批管理
           </MenuItem>
           <Divider />
           <MenuItem 

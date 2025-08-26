@@ -9,6 +9,7 @@ import {
   QrCode, 
   Archive, 
   BarChart,
+  CheckCircle,
   Upload,
   Download
 } from '@mui/icons-material';
@@ -39,6 +40,12 @@ export default function Home() {
       description: '支持动态表单、员工签到、在线订餐、问卷调查和访客登记等应用场景',
       icon: <QrCode fontSize="large" />,
       link: '/qrcode',
+    },
+    {
+      title: '审批管理',
+      description: '管理文档审批流程，支持自定义审批模板和多级审批',
+      icon: <CheckCircle fontSize="large" />,
+      link: '/approval-management',
     },
     {
       title: '知识库归档',
