@@ -15,3 +15,4 @@ alwaysApply: true
 11. 运行多个命令时不使用&& 符号，请使用;
 12. 修改代码时禁止简化逻辑，请使用完整的逻辑
 13. 运行命令时请使用绝对路径，cd d:\Downloads\Dify-Cdk-Office\cdk-office\frontend ; npm run dev
+14. 只推送cdk-office目录的内容到GitHub
