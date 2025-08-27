@@ -1,38 +1,38 @@
 import React, { useState } from 'react';
-import {
-  Box,
-  Typography,
-  Card,
-  CardContent,
-  CardActions,
-  Button,
-  Grid,
-  Chip,
-  Avatar,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  IconButton,
-} from '@mui/material';
 import { 
-  Description, 
-  PictureAsPdf, 
-  Article, 
-  Image, 
+  FileText, 
+  FileImage, 
   Folder, 
   Upload, 
   Download, 
   Share, 
-  Delete,
+  Trash2, 
   Search,
-  Add
-} from '@mui/icons-material';
+  FileSpreadsheet,
+  Image as ImageIcon
+} from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter,
+  DialogDescription
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 interface Document {
   id: string;
@@ -101,17 +101,17 @@ const DocumentManagement: React.FC = () => {
   const getDocumentIcon = (type: Document['type']) => {
     switch (type) {
       case 'pdf':
-        return <PictureAsPdf sx={{ color: '#ff0000' }} />;
+        return <FileText className="h-8 w-8 text-red-500" />;
       case 'doc':
-        return <Article sx={{ color: '#2b579a' }} />;
+        return <FileText className="h-8 w-8 text-blue-500" />;
       case 'xls':
-        return <Article sx={{ color: '#217346' }} />;
+        return <FileSpreadsheet className="h-8 w-8 text-green-500" />;
       case 'image':
-        return <Image sx={{ color: '#4285f4' }} />;
+        return <ImageIcon className="h-8 w-8 text-blue-400" />;
       case 'folder':
-        return <Folder sx={{ color: '#fdbd00' }} />;
+        return <Folder className="h-8 w-8 text-yellow-500" />;
       default:
-        return <Description />;
+        return <FileText className="h-8 w-8" />;
     }
   };
 
@@ -121,124 +121,148 @@ const DocumentManagement: React.FC = () => {
   );
 
   return (
-    <Box sx={{ width: '100%', p: 2 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          文档管理
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <TextField
-            variant="outlined"
-            size="small"
-            placeholder="搜索文档..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            InputProps={{
-              startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
-            }}
-          />
-          <Button
-            variant="contained"
-            startIcon={<Upload />}
-            onClick={() => setIsUploadDialogOpen(true)}
-          >
+    <div className="container mx-auto p-6 space-y-6">
+      {/* 页面头部 */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">文档管理</h1>
+          <p className="text-muted-foreground mt-2">
+            管理和组织您的文档
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="搜索文档..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8 w-[200px] md:w-[300px]"
+            />
+          </div>
+          <Button onClick={() => setIsUploadDialogOpen(true)}>
+            <Upload className="h-4 w-4 mr-2" />
             上传文档
           </Button>
-        </Box>
-      </Box>
+        </div>
+      </div>
 
-      <Grid container spacing={3}>
+      {/* 文档网格 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredDocuments.map((doc) => (
-          <Grid item xs={12} sm={6} md={4} key={doc.id}>
-            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-              <CardContent sx={{ flexGrow: 1 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <Avatar sx={{ mr: 2, bgcolor: 'transparent' }}>
-                    {getDocumentIcon(doc.type)}
-                  </Avatar>
-                  <Box>
-                    <Typography variant="h6" component="h3" noWrap>
-                      {doc.name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {doc.size} • {doc.lastModified}
-                    </Typography>
-                  </Box>
-                </Box>
-                
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 2 }}>
-                  {doc.tags.map((tag, index) => (
-                    <Chip key={index} label={tag} size="small" />
-                  ))}
-                </Box>
-                
-                <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
-                  <Avatar sx={{ width: 24, height: 24, fontSize: '0.75rem' }}>
+          <Card key={doc.id} className="flex flex-col">
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-md bg-muted">
+                  {getDocumentIcon(doc.type)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <CardTitle className="text-lg truncate">{doc.name}</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    {doc.size} • {doc.lastModified}
+                  </p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="flex-1 pb-2">
+              <div className="flex flex-wrap gap-1 mb-3">
+                {doc.tags.map((tag, index) => (
+                  <Badge key={index} variant="secondary">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+              
+              <div className="flex items-center">
+                <Avatar className="h-6 w-6">
+                  <AvatarFallback className="text-xs">
                     {doc.owner.charAt(0)}
-                  </Avatar>
-                  <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
-                    {doc.owner}
-                  </Typography>
-                </Box>
-              </CardContent>
-              <CardActions sx={{ justifyContent: 'space-between' }}>
-                <Button size="small" startIcon={<Download />}>
-                  下载
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-sm text-muted-foreground ml-2">
+                  {doc.owner}
+                </span>
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-between p-4 pt-2">
+              <Button variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                下载
+              </Button>
+              <div className="flex gap-1">
+                <Button variant="ghost" size="icon">
+                  <Share className="h-4 w-4" />
                 </Button>
-                <Box>
-                  <IconButton size="small">
-                    <Share />
-                  </IconButton>
-                  <IconButton size="small">
-                    <Delete />
-                  </IconButton>
-                </Box>
-              </CardActions>
-            </Card>
-          </Grid>
+                <Button variant="ghost" size="icon">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardFooter>
+          </Card>
         ))}
-      </Grid>
+      </div>
 
       {/* 上传文档对话框 */}
-      <Dialog open={isUploadDialogOpen} onClose={() => setIsUploadDialogOpen(false)}>
-        <DialogTitle>上传文档</DialogTitle>
+      <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
         <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: '400px', mt: '1rem' }}>
-            <TextField
-              label="文档名称"
-              fullWidth
-            />
-            <FormControl fullWidth>
-              <InputLabel>文档类型</InputLabel>
+          <DialogHeader>
+            <DialogTitle>上传文档</DialogTitle>
+            <DialogDescription>
+              选择要上传的文档文件
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="document-name">文档名称</Label>
+              <Input id="document-name" placeholder="输入文档名称" />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>文档类型</Label>
               <Select defaultValue="pdf">
-                <MenuItem value="pdf">PDF文档</MenuItem>
-                <MenuItem value="doc">Word文档</MenuItem>
-                <MenuItem value="xls">Excel表格</MenuItem>
-                <MenuItem value="image">图片</MenuItem>
-                <MenuItem value="other">其他</MenuItem>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pdf">PDF文档</SelectItem>
+                  <SelectItem value="doc">Word文档</SelectItem>
+                  <SelectItem value="xls">Excel表格</SelectItem>
+                  <SelectItem value="image">图片</SelectItem>
+                  <SelectItem value="other">其他</SelectItem>
+                </SelectContent>
               </Select>
-            </FormControl>
-            <Button
-              variant="outlined"
-              component="label"
-              startIcon={<Upload />}
-            >
-              选择文件
-              <input type="file" hidden />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="file-upload">选择文件</Label>
+              <div className="flex items-center gap-2">
+                <Input id="file-upload" type="file" className="flex-1" />
+                <Button variant="outline">
+                  <Upload className="h-4 w-4 mr-2" />
+                  选择
+                </Button>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="tags">标签</Label>
+              <Input id="tags" placeholder="输入标签，用逗号分隔" />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsUploadDialogOpen(false)}>
+              取消
             </Button>
-            <TextField
-              label="标签"
-              placeholder="输入标签，用逗号分隔"
-              fullWidth
-            />
-          </Box>
+            <Button>
+              <Upload className="h-4 w-4 mr-2" />
+              上传
+            </Button>
+          </DialogFooter>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setIsUploadDialogOpen(false)}>取消</Button>
-          <Button variant="contained">上传</Button>
-        </DialogActions>
       </Dialog>
-    </Box>
+    </div>
   );
 };
 

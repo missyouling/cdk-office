@@ -16,15 +16,92 @@ app:
 
 # Database - Memory optimized for 2C4G VPS
 database:
+  # 数据库提供商: local_postgres, supabase, memfire, neon, planetscale
+  provider: "local_postgres"
+  
+  # 基础连接配置
   host: "127.0.0.1"
   port: 5432
   username: "postgres"
   password: ""
   database: "cdk_office"
-  max_idle_conn: 5     # Reduced from 10 to 5
-  max_open_conn: 20    # Reduced from 100 to 20
+  
+  # SSL配置
+  ssl_mode: "disable"     # disable, require, verify-ca, verify-full
+  ssl_cert: ""            # SSL证书文件路径
+  ssl_key: ""             # SSL私钥文件路径
+  ssl_root_cert: ""       # SSL根证书文件路径
+  
+  # 连接池配置 - 内存优化
+  max_idle_conn: 5        # Reduced from 10 to 5
+  max_open_conn: 20       # Reduced from 100 to 20
   conn_max_lifetime: 300  # Reduced from 3600 to 300 seconds (5 minutes)
-  log_level: "warn"    # Changed from info to warn to reduce log memory usage
+  conn_max_idle_time: 60  # 连接最大空闲时间(秒)
+  
+  # 日志和监控配置
+  log_level: "warn"       # Changed from info to warn to reduce log memory usage
+  slow_query_threshold: 500 # 慢查询阈值(毫秒)
+  enable_metrics: false   # 禁用指标监控以节省内存
+  
+  # Supabase专用配置 - VPS优化
+  supabase:
+    url: "<SUPABASE_URL>"
+    anon_key: "<SUPABASE_ANON_KEY>"
+    service_role_key: "<SUPABASE_SERVICE_ROLE_KEY>"
+    jwt_secret: "<SUPABASE_JWT_SECRET>"
+    region: "us-east-1"
+    api_version: "v1"
+    
+    # 连接配置 - VPS优化
+    pooler_url: "<SUPABASE_POOLER_URL>"
+    direct_url: "<SUPABASE_DIRECT_URL>"
+    
+    # 性能配置 - VPS内存优化
+    max_connections: 5      # 进一步减少连接数
+    timeout: 30
+    
+    # 实时数据配置
+    enable_realtime: false  # 禁用实时功能以节省资源
+    realtime_url: "<SUPABASE_REALTIME_URL>"
+    
+    # 存储配置
+    storage_bucket: "cdk-office"
+  
+  # MemFire Cloud专用配置 - VPS优化
+  memfire:
+    url: "<MEMFIRE_URL>"
+    api_key: "<MEMFIRE_API_KEY>"
+    service_key: "<MEMFIRE_SERVICE_KEY>"
+    jwt_secret: "<MEMFIRE_JWT_SECRET>"
+    region: "cn-shanghai"
+    api_version: "v1"
+    
+    # 连接配置 - VPS优化
+    pooler_url: "<MEMFIRE_POOLER_URL>"
+    direct_url: "<MEMFIRE_DIRECT_URL>"
+    
+    # 性能配置 - VPS内存优化
+    max_connections: 8      # 比Supabase稍高，考虑中国网络环境
+    timeout: 30
+    
+    # 实时功能配置
+    enable_realtime: false  # 禁用实时功能以节省资源
+    realtime_url: "<MEMFIRE_REALTIME_URL>"
+    
+    # 存储配置
+    storage_bucket: "cdk-office"
+    cdn_url: "<MEMFIRE_CDN_URL>"
+    
+    # 中国特色配置
+    enable_icp: true
+    custom_domain: "<CUSTOM_DOMAIN>"
+    enable_https: true
+  
+  # 读副本数据库配置(VPS环境不建议启用)
+  read_replicas: []
+  
+  # 多数据库支持(VPS环境不建议启用)
+  enable_sharding: false
 
 # Redis - Memory optimized for 2C4G VPS
 redis:

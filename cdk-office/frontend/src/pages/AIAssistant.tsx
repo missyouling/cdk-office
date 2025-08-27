@@ -1,25 +1,20 @@
-import React, { useState } from 'react';
-import {
-  Box,
-  Typography,
-  TextField,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  Avatar,
-  IconButton,
-  Chip,
-  CircularProgress,
-} from '@mui/material';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
-  SmartToy, 
+  Bot, 
   Send, 
-  AttachFile, 
+  Paperclip, 
   History,
-  ThumbUp,
-  ThumbDown
-} from '@mui/icons-material';
+  ThumbsUp,
+  ThumbsDown,
+  Loader2
+} from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface Message {
   id: string;
@@ -60,6 +55,16 @@ const AIAssistant: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>(mockMessages);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // 滚动到最新消息
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isLoading]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   const handleSendMessage = () => {
     if (!inputValue.trim()) return;
@@ -98,130 +103,125 @@ const AIAssistant: React.FC = () => {
   };
 
   return (
-    <Box sx={{ width: '100%', p: 2 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          AI助手
-        </Typography>
-        <Chip icon={<History />} label="对话历史" />
-      </Box>
+    <div className="container mx-auto p-6 space-y-6">
+      {/* 页面头部 */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">AI助手</h1>
+          <p className="text-muted-foreground mt-2">
+            基于Dify AI平台的智能办公助手
+          </p>
+        </div>
+        <Badge variant="secondary">
+          <History className="h-4 w-4 mr-1" />
+          对话历史
+        </Badge>
+      </div>
 
-      <Card sx={{ mb: 3 }}>
-        <CardHeader
-          avatar={
-            <Avatar sx={{ bgcolor: 'primary.main' }}>
-              <SmartToy />
+      {/* AI助手介绍卡片 */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <Avatar className="h-12 w-12">
+              <AvatarFallback className="bg-primary text-primary-foreground">
+                <Bot className="h-6 w-6" />
+              </AvatarFallback>
             </Avatar>
-          }
-          title="智能办公助手"
-          subheader="基于Dify AI平台，为您提供企业知识问答服务"
-        />
+            <div>
+              <CardTitle>智能办公助手</CardTitle>
+              <CardDescription>
+                基于Dify AI平台，为您提供企业知识问答服务
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
         <CardContent>
-          <Typography variant="body1" color="text.secondary">
+          <p className="text-muted-foreground mb-4">
             您可以询问关于公司政策、流程、文档等方面的问题，AI助手将为您提供准确的信息。
-          </Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 2 }}>
-            <Chip label="年假政策" variant="outlined" />
-            <Chip label="报销流程" variant="outlined" />
-            <Chip label="入职手续" variant="outlined" />
-            <Chip label="会议室预订" variant="outlined" />
-          </Box>
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="outline">年假政策</Badge>
+            <Badge variant="outline">报销流程</Badge>
+            <Badge variant="outline">入职手续</Badge>
+            <Badge variant="outline">会议室预订</Badge>
+          </div>
         </CardContent>
       </Card>
 
-      <Box sx={{ 
-        height: '500px', 
-        overflowY: 'auto', 
-        border: '1px solid #e0e0e0', 
-        borderRadius: 1, 
-        mb: 2,
-        p: 2
-      }}>
-        {messages.map((message) => (
-          <Box 
-            key={message.id} 
-            sx={{ 
-              display: 'flex', 
-              justifyContent: message.role === 'user' ? 'flex-end' : 'flex-start',
-              mb: 2
-            }}
-          >
-            <Box sx={{ 
-              maxWidth: '80%', 
-              bgcolor: message.role === 'user' ? 'primary.light' : 'grey.100',
-              borderRadius: 2,
-              p: 2
-            }}>
-              <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
-                {message.content}
-              </Typography>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-                <Typography variant="caption" color="text.secondary">
-                  {message.timestamp}
-                </Typography>
-                {message.role === 'assistant' && (
-                  <Box>
-                    <IconButton size="small">
-                      <ThumbUp fontSize="small" />
-                    </IconButton>
-                    <IconButton size="small">
-                      <ThumbDown fontSize="small" />
-                    </IconButton>
-                  </Box>
-                )}
-              </Box>
-            </Box>
-          </Box>
-        ))}
-        
-        {isLoading && (
-          <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 2 }}>
-            <Box sx={{ 
-              maxWidth: '80%', 
-              bgcolor: 'grey.100',
-              borderRadius: 2,
-              p: 2,
-              display: 'flex',
-              alignItems: 'center'
-            }}>
-              <CircularProgress size={20} sx={{ mr: 1 }} />
-              <Typography variant="body1">
-                AI助手正在思考中...
-              </Typography>
-            </Box>
-          </Box>
-        )}
-      </Box>
+      {/* 消息对话区域 */}
+      <ScrollArea className="h-[500px] border rounded-lg p-4">
+        <div className="space-y-4">
+          {messages.map((message) => (
+            <div
+              key={message.id}
+              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
+              <div
+                className={`max-w-[80%] rounded-2xl p-4 ${
+                  message.role === 'user'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted'
+                }`}
+              >
+                <div className="whitespace-pre-line">{message.content}</div>
+                <div className="flex justify-between items-center mt-2">
+                  <span className="text-xs opacity-70">{message.timestamp}</span>
+                  {message.role === 'assistant' && (
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" className="h-6 w-6">
+                        <ThumbsUp className="h-3 w-3" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-6 w-6">
+                        <ThumbsDown className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+          
+          {isLoading && (
+            <div className="flex justify-start">
+              <div className="max-w-[80%] bg-muted rounded-2xl p-4 flex items-center">
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <span>AI助手正在思考中...</span>
+              </div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+      </ScrollArea>
 
-      <Box sx={{ display: 'flex', gap: 2 }}>
-        <TextField
-          fullWidth
-          multiline
-          maxRows={4}
-          variant="outlined"
-          placeholder="请输入您的问题..."
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyPress={handleKeyPress}
-          InputProps={{
-            startAdornment: (
-              <IconButton sx={{ mr: 1 }}>
-                <AttachFile />
-              </IconButton>
-            ),
-          }}
-        />
+      {/* 输入区域 */}
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Textarea
+            placeholder="请输入您的问题..."
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyPress}
+            className="min-h-[60px] pr-12"
+            disabled={isLoading}
+          />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute right-2 top-2"
+            disabled={isLoading}
+          >
+            <Paperclip className="h-4 w-4" />
+          </Button>
+        </div>
         <Button
-          variant="contained"
-          size="large"
-          endIcon={<Send />}
+          size="lg"
           onClick={handleSendMessage}
           disabled={isLoading || !inputValue.trim()}
         >
-          发送
+          <Send className="h-4 w-4" />
         </Button>
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 };
 

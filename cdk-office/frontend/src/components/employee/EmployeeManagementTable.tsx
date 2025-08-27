@@ -1,38 +1,50 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import {
-  MaterialReactTable,
-  useMaterialReactTable,
-  type MRT_ColumnDef,
-  type MRT_Row,
-} from 'material-react-table';
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
-  Box,
-  Button,
-  IconButton,
-  MenuItem,
-  Typography,
-  Chip,
-  Avatar,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  TextField,
   Select,
-  FormControl,
-  InputLabel,
-  Alert,
-} from '@mui/material';
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { 
-  AccountCircle, 
-  Send, 
+  User, 
   Edit, 
-  Delete,
-  FileDownload,
-  FileUpload,
-  Print,
+  Trash2,
+  Download,
+  Upload,
+  Printer,
   Share,
-} from '@mui/icons-material';
+  MoreHorizontal,
+  Search,
+  Filter,
+} from 'lucide-react';
 
 // 员工数据接口
 interface Employee {
@@ -92,109 +104,67 @@ const EmployeeManagementTable: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>(mockEmployees);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [departmentFilter, setDepartmentFilter] = useState<string>('all');
 
-  // 列定义
-  const columns = useMemo<MRT_ColumnDef<Employee>[]>(
-    () => [
-      {
-        id: 'employee',
-        header: '员工信息',
-        columns: [
-          {
-            accessorFn: (row) => `${row.firstName} ${row.lastName}`,
-            id: 'name',
-            header: '姓名',
-            size: 150,
-            Cell: ({ renderedCellValue, row }) => (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <Avatar>
-                  <AccountCircle />
-                </Avatar>
-                <span>{renderedCellValue}</span>
-              </Box>
-            ),
-          },
-          {
-            accessorKey: 'email',
-            header: '邮箱',
-            size: 200,
-            enableClickToCopy: true,
-          },
-        ],
-      },
-      {
-        id: 'job',
-        header: '职位信息',
-        columns: [
-          {
-            accessorKey: 'jobTitle',
-            header: '职位',
-            size: 150,
-          },
-          {
-            accessorKey: 'department',
-            header: '部门',
-            size: 150,
-          },
-          {
-            accessorKey: 'salary',
-            header: '薪资',
-            size: 120,
-            Cell: ({ cell }) => (
-              <Box
-                component="span"
-                sx={(theme) => ({
-                  backgroundColor:
-                    cell.getValue<number>() < 10000
-                      ? theme.palette.error.dark
-                      : cell.getValue<number>() >= 10000 &&
-                        cell.getValue<number>() < 15000
-                      ? theme.palette.warning.dark
-                      : theme.palette.success.dark,
-                  borderRadius: '0.25rem',
-                  color: '#fff',
-                  maxWidth: '9ch',
-                  p: '0.25rem',
-                })}
-              >
-                {cell.getValue<number>()?.toLocaleString?.('zh-CN', {
-                  style: 'currency',
-                  currency: 'CNY',
-                  minimumFractionDigits: 0,
-                  maximumFractionDigits: 0,
-                })}
-              </Box>
-            ),
-          },
-          {
-            accessorFn: (row) => new Date(row.startDate),
-            id: 'startDate',
-            header: '入职日期',
-            filterVariant: 'date',
-            Cell: ({ cell }) => cell.getValue<Date>()?.toLocaleDateString('zh-CN'),
-          },
-          {
-            accessorKey: 'status',
-            header: '状态',
-            filterVariant: 'select',
-            Cell: ({ cell }) => (
-              <Chip
-                label={cell.getValue<string>()}
-                color={
-                  cell.getValue<string>() === 'active'
-                    ? 'success'
-                    : cell.getValue<string>() === 'inactive'
-                    ? 'error'
-                    : 'warning'
-                }
-              />
-            ),
-          },
-        ],
-      },
-    ],
-    [],
-  );
+  // 过滤员工数据
+  const filteredEmployees = employees.filter(employee => {
+    const matchesSearch = 
+      `${employee.firstName} ${employee.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee.jobTitle.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'all' || employee.status === statusFilter;
+    const matchesDepartment = departmentFilter === 'all' || employee.department === departmentFilter;
+    
+    return matchesSearch && matchesStatus && matchesDepartment;
+  });
+
+  // 获取唯一的部门列表
+  const departments = Array.from(new Set(employees.map(emp => emp.department)));
+
+  // 处理行选择
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedEmployees(filteredEmployees.map(emp => emp.id));
+    } else {
+      setSelectedEmployees([]);
+    }
+  };
+
+  const handleSelectRow = (employeeId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedEmployees([...selectedEmployees, employeeId]);
+    } else {
+      setSelectedEmployees(selectedEmployees.filter(id => id !== employeeId));
+    }
+  };
+
+  // 状态徽章样式
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'active':
+        return <Badge variant="success">在职</Badge>;
+      case 'inactive':
+        return <Badge variant="error">离职</Badge>;
+      case 'pending':
+        return <Badge variant="warning">待入职</Badge>;
+      default:
+        return <Badge variant="default">{status}</Badge>;
+    }
+  };
+
+  // 薪资格式化
+  const formatSalary = (salary: number) => {
+    return salary.toLocaleString('zh-CN', {
+      style: 'currency',
+      currency: 'CNY',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    });
+  };
 
   // 处理导出CSV
   const exportToCSV = (data: Employee[]) => {
@@ -365,212 +335,286 @@ const EmployeeManagementTable: React.FC = () => {
   const handleDeleteEmployee = (employeeId: string) => {
     if (window.confirm('确定要删除这个员工吗？')) {
       setEmployees(employees.filter(emp => emp.id !== employeeId));
+      setSelectedEmployees(selectedEmployees.filter(id => id !== employeeId));
     }
   };
 
-  // 表格配置
-  const table = useMaterialReactTable({
-    columns,
-    data: employees,
-    enableColumnFilterModes: true,
-    enableColumnOrdering: true,
-    enableGrouping: true,
-    enableColumnPinning: true,
-    enableFacetedValues: true,
-    enableRowActions: true,
-    enableRowSelection: true,
-    enableEditing: true, // 启用编辑功能
-    initialState: {
-      showColumnFilters: true,
-      showGlobalFilter: true,
-      columnPinning: {
-        left: ['mrt-row-select'],
-        right: ['mrt-row-actions'],
-      },
-    },
-    paginationDisplayMode: 'pages',
-    positionToolbarAlertBanner: 'bottom',
-    muiSearchTextFieldProps: {
-      size: 'small',
-      variant: 'outlined',
-    },
-    // 工具栏按钮
-    renderTopToolbarCustomActions: ({ table }) => (
-      <Box sx={{ display: 'flex', gap: '1rem', p: '0.5rem', flexWrap: 'wrap' }}>
-        <Button
-          color="primary"
-          onClick={() => {
-            // 导出选中行
-            const selectedRows = table.getSelectedRowModel().flatRows;
-            if (selectedRows.length > 0) {
-              exportToCSV(selectedRows.map(row => row.original));
-            } else {
-              // 如果没有选中行，导出所有数据
-              exportToCSV(employees);
-            }
-          }}
-          variant="contained"
-          startIcon={<FileDownload />}
-        >
-          导出数据
-        </Button>
-        <Button
-          color="secondary"
-          onClick={importFromCSV}
-          variant="outlined"
-          startIcon={<FileUpload />}
-        >
-          导入数据
-        </Button>
-        <Button
-          color="success"
-          onClick={downloadTemplate}
-          variant="outlined"
-          startIcon={<FileDownload />}
-        >
-          下载模板
-        </Button>
-        <Button
-          color="info"
-          onClick={() => {
-            // 打印选中行
-            const selectedRows = table.getSelectedRowModel().flatRows;
-            if (selectedRows.length > 0) {
-              printData(selectedRows.map(row => row.original));
-            } else {
-              // 如果没有选中行，打印所有数据
-              printData(employees);
-            }
-          }}
-          variant="outlined"
-          startIcon={<Print />}
-        >
-          打印数据
-        </Button>
-        <Button
-          color="warning"
-          onClick={() => {
-            // 分享选中行
-            const selectedRows = table.getSelectedRowModel().flatRows;
-            if (selectedRows.length > 0) {
-              alert(`分享 ${selectedRows.length} 条员工记录的功能待实现`);
-            } else {
-              alert('请先选择要分享的员工记录');
-            }
-          }}
-          variant="outlined"
-          startIcon={<Share />}
-        >
-          分享选中
-        </Button>
-      </Box>
-    ),
-    // 行操作菜单
-    renderRowActionMenuItems: ({ closeMenu, row }) => [
-      <MenuItem
-        key={0}
-        onClick={() => {
-          // 编辑员工
-          handleEditEmployee(row.original);
-          closeMenu();
-        }}
-        sx={{ m: 0 }}
-      >
-        <Edit />
-        <span style={{ marginLeft: '0.5rem' }}>编辑</span>
-      </MenuItem>,
-      <MenuItem
-        key={1}
-        onClick={() => {
-          // 删除员工
-          handleDeleteEmployee(row.original.id);
-          closeMenu();
-        }}
-        sx={{ m: 0 }}
-      >
-        <Delete />
-        <span style={{ marginLeft: '0.5rem' }}>删除</span>
-      </MenuItem>,
-    ],
-  });
-
   return (
-    <>
-      <MaterialReactTable table={table} />
-      
+    <div className="w-full p-6 space-y-4">
+      {/* 顶部工具栏 */}
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+        <div className="flex flex-col sm:flex-row gap-4 flex-1">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="搜索员工..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 w-64"
+            />
+          </div>
+          
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="筛选状态" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">所有状态</SelectItem>
+              <SelectItem value="active">在职</SelectItem>
+              <SelectItem value="inactive">离职</SelectItem>
+              <SelectItem value="pending">待入职</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="筛选部门" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">所有部门</SelectItem>
+              {departments.map(dept => (
+                <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => exportToCSV(selectedEmployees.length > 0 
+              ? employees.filter(emp => selectedEmployees.includes(emp.id))
+              : filteredEmployees
+            )}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            导出数据
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={importFromCSV}
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            导入数据
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={downloadTemplate}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            下载模板
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => printData(selectedEmployees.length > 0 
+              ? employees.filter(emp => selectedEmployees.includes(emp.id))
+              : filteredEmployees
+            )}
+          >
+            <Printer className="h-4 w-4 mr-2" />
+            打印
+          </Button>
+        </div>
+      </div>
+
+      {/* 选中信息 */}
+      {selectedEmployees.length > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-blue-700">
+              已选中 {selectedEmployees.length} 个员工
+            </span>
+            <div className="flex gap-2">
+              <Button size="sm" variant="destructive">
+                批量删除
+              </Button>
+              <Button size="sm" variant="outline">
+                批量导出
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 数据表格 */}
+      <div className="border rounded-md">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-12">
+                <Checkbox
+                  checked={selectedEmployees.length === filteredEmployees.length && filteredEmployees.length > 0}
+                  onCheckedChange={handleSelectAll}
+                />
+              </TableHead>
+              <TableHead>员工信息</TableHead>
+              <TableHead>职位</TableHead>
+              <TableHead>部门</TableHead>
+              <TableHead>薪资</TableHead>
+              <TableHead>入职日期</TableHead>
+              <TableHead>状态</TableHead>
+              <TableHead className="w-20">操作</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredEmployees.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                  没有找到匹配的员工数据
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredEmployees.map((employee) => (
+                <TableRow key={employee.id}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedEmployees.includes(employee.id)}
+                      onCheckedChange={(checked) => handleSelectRow(employee.id, checked as boolean)}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-3">
+                      <Avatar>
+                        <AvatarFallback>
+                          <User className="h-4 w-4" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-medium">{employee.firstName} {employee.lastName}</div>
+                        <div className="text-sm text-gray-500">{employee.email}</div>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>{employee.jobTitle}</TableCell>
+                  <TableCell>{employee.department}</TableCell>
+                  <TableCell>
+                    <span className={`px-2 py-1 rounded text-sm font-medium ${
+                      employee.salary < 10000 ? 'bg-red-100 text-red-800' :
+                      employee.salary < 15000 ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-green-100 text-green-800'
+                    }`}>
+                      {formatSalary(employee.salary)}
+                    </span>
+                  </TableCell>
+                  <TableCell>{new Date(employee.startDate).toLocaleDateString('zh-CN')}</TableCell>
+                  <TableCell>{getStatusBadge(employee.status)}</TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onClick={() => handleEditEmployee(employee)}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          编辑
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleDeleteEmployee(employee.id)}
+                          className="text-red-600"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          删除
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
       {/* 编辑员工对话框 */}
-      <Dialog open={isEditDialogOpen} onClose={() => setIsEditDialogOpen(false)}>
-        <DialogTitle>编辑员工信息</DialogTitle>
-        <DialogContent>
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>编辑员工信息</DialogTitle>
+          </DialogHeader>
           {editingEmployee && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: '400px', mt: '1rem' }}>
-              <TextField
-                label="名字"
-                value={editingEmployee.firstName}
-                onChange={(e) => setEditingEmployee({...editingEmployee, firstName: e.target.value})}
-                fullWidth
-              />
-              <TextField
-                label="姓氏"
-                value={editingEmployee.lastName}
-                onChange={(e) => setEditingEmployee({...editingEmployee, lastName: e.target.value})}
-                fullWidth
-              />
-              <TextField
-                label="邮箱"
-                value={editingEmployee.email}
-                onChange={(e) => setEditingEmployee({...editingEmployee, email: e.target.value})}
-                fullWidth
-              />
-              <TextField
-                label="职位"
-                value={editingEmployee.jobTitle}
-                onChange={(e) => setEditingEmployee({...editingEmployee, jobTitle: e.target.value})}
-                fullWidth
-              />
-              <TextField
-                label="部门"
-                value={editingEmployee.department}
-                onChange={(e) => setEditingEmployee({...editingEmployee, department: e.target.value})}
-                fullWidth
-              />
-              <TextField
-                label="薪资"
-                type="number"
-                value={editingEmployee.salary}
-                onChange={(e) => setEditingEmployee({...editingEmployee, salary: Number(e.target.value)})}
-                fullWidth
-              />
-              <TextField
-                label="入职日期"
-                type="date"
-                value={editingEmployee.startDate}
-                onChange={(e) => setEditingEmployee({...editingEmployee, startDate: e.target.value})}
-                fullWidth
-                InputLabelProps={{
-                  shrink: true,
-                }}
-              />
-              <FormControl fullWidth>
-                <InputLabel>状态</InputLabel>
-                <Select
-                  value={editingEmployee.status}
-                  onChange={(e) => setEditingEmployee({...editingEmployee, status: e.target.value as any})}
-                >
-                  <MenuItem value="active">活跃</MenuItem>
-                  <MenuItem value="inactive">非活跃</MenuItem>
-                  <MenuItem value="pending">待定</MenuItem>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">名字</Label>
+                <Input
+                  id="firstName"
+                  value={editingEmployee.firstName}
+                  onChange={(e) => setEditingEmployee({...editingEmployee, firstName: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName">姓氏</Label>
+                <Input
+                  id="lastName"
+                  value={editingEmployee.lastName}
+                  onChange={(e) => setEditingEmployee({...editingEmployee, lastName: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">邮箱</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={editingEmployee.email}
+                  onChange={(e) => setEditingEmployee({...editingEmployee, email: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="jobTitle">职位</Label>
+                <Input
+                  id="jobTitle"
+                  value={editingEmployee.jobTitle}
+                  onChange={(e) => setEditingEmployee({...editingEmployee, jobTitle: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="department">部门</Label>
+                <Input
+                  id="department"
+                  value={editingEmployee.department}
+                  onChange={(e) => setEditingEmployee({...editingEmployee, department: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="salary">薪资</Label>
+                <Input
+                  id="salary"
+                  type="number"
+                  value={editingEmployee.salary}
+                  onChange={(e) => setEditingEmployee({...editingEmployee, salary: parseInt(e.target.value) || 0})}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="status">状态</Label>
+                <Select value={editingEmployee.status} onValueChange={(value) => setEditingEmployee({...editingEmployee, status: value as any})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">在职</SelectItem>
+                    <SelectItem value="inactive">离职</SelectItem>
+                    <SelectItem value="pending">待入职</SelectItem>
+                  </SelectContent>
                 </Select>
-              </FormControl>
-            </Box>
+              </div>
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                  取消
+                </Button>
+                <Button onClick={handleSaveEmployee}>
+                  保存
+                </Button>
+              </div>
+            </div>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setIsEditDialogOpen(false)}>取消</Button>
-          <Button onClick={handleSaveEmployee} variant="contained">保存</Button>
-        </DialogActions>
       </Dialog>
-    </>
+    </div>
   );
 };
 

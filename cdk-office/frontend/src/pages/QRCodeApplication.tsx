@@ -1,35 +1,56 @@
 import React, { useState } from 'react';
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle,
+  CardDescription,
+  CardFooter
+} from '@/components/ui/card';
+import { 
+  Button 
+} from '@/components/ui/button';
+import { 
+  Input 
+} from '@/components/ui/input';
+import { 
+  Label 
+} from '@/components/ui/label';
 import {
-  Box,
-  Typography,
-  Card,
-  CardContent,
-  CardActions,
-  Button,
-  Grid,
-  Chip,
-  TextField,
-  FormControl,
-  InputLabel,
   Select,
-  MenuItem,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Dialog,
-  DialogTitle,
   DialogContent,
-  DialogActions,
-  IconButton,
-  Avatar,
-} from '@mui/material';
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { 
+  Badge 
+} from '@/components/ui/badge';
+import { 
+  Avatar, 
+  AvatarFallback 
+} from '@/components/ui/avatar';
+import { 
+  toast 
+} from '@/components/ui/use-toast';
+
 import { 
   QrCode, 
-  QrCode2, 
-  Add, 
+  Plus, 
+  Eye, 
   Edit, 
-  Delete, 
-  FileDownload,
-  Share,
-  Preview
-} from '@mui/icons-material';
+  Trash2, 
+  Download,
+  Share2
+} from 'lucide-react';
 
 interface QRCodeForm {
   id: string;
@@ -88,7 +109,7 @@ const QRCodeApplication: React.FC = () => {
 
   const getFormTypeColor = (type: QRCodeForm['type']) => {
     switch (type) {
-      case 'survey': return 'primary';
+      case 'survey': return 'default';
       case 'registration': return 'secondary';
       case 'feedback': return 'success';
       case 'checkin': return 'warning';
@@ -97,142 +118,124 @@ const QRCodeApplication: React.FC = () => {
   };
 
   return (
-    <Box sx={{ width: '100%', p: 2 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          二维码应用
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          onClick={() => setIsCreateDialogOpen(true)}
-        >
+    <div className="container mx-auto p-6 space-y-6">
+      {/* 页面标题和操作按钮 */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">二维码应用</h1>
+          <p className="text-muted-foreground mt-2">
+            创建和管理二维码表单
+          </p>
+        </div>
+        <Button onClick={() => setIsCreateDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
           创建表单
         </Button>
-      </Box>
+      </div>
 
-      <Grid container spacing={3}>
+      {/* 表单卡片网格 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {forms.map((form) => (
-          <Grid item xs={12} sm={6} md={4} key={form.id}>
-            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-              <CardContent sx={{ flexGrow: 1 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <Avatar sx={{ mr: 2, bgcolor: 'primary.main' }}>
-                    <QrCode2 />
-                  </Avatar>
-                  <Box>
-                    <Typography variant="h6" component="h3" noWrap>
-                      {form.name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {form.createdAt} • {form.createdBy}
-                    </Typography>
-                  </Box>
-                </Box>
-                
-                <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
-                  <QrCode sx={{ width: 100, height: 100, color: 'grey.500' }} />
-                </Box>
-                
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                  <Chip 
-                    label={getFormTypeLabel(form.type)} 
-                    color={getFormTypeColor(form.type) as any}
-                    size="small"
-                  />
-                </Box>
-              </CardContent>
-              <CardActions sx={{ justifyContent: 'space-between' }}>
-                <Button size="small" startIcon={<Preview />}>
-                  预览
+          <Card key={form.id} className="flex flex-col">
+            <CardHeader>
+              <div className="flex items-center space-x-3">
+                <Avatar>
+                  <AvatarFallback>
+                    <QrCode className="h-5 w-5" />
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <CardTitle className="text-lg">{form.name}</CardTitle>
+                  <CardDescription>
+                    {form.createdAt} • {form.createdBy}
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="flex-grow">
+              <div className="flex justify-center my-4">
+                <QrCode className="h-24 w-24 text-muted-foreground" />
+              </div>
+              <div className="flex justify-center">
+                <Badge variant={getFormTypeColor(form.type)}>
+                  {getFormTypeLabel(form.type)}
+                </Badge>
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <Button variant="outline" size="sm">
+                <Eye className="h-4 w-4 mr-2" />
+                预览
+              </Button>
+              <div className="flex space-x-1">
+                <Button variant="ghost" size="icon">
+                  <Edit className="h-4 w-4" />
                 </Button>
-                <Box>
-                  <IconButton size="small" onClick={() => setSelectedForm(form)}>
-                    <Edit />
-                  </IconButton>
-                  <IconButton size="small">
-                    <Share />
-                  </IconButton>
-                  <IconButton size="small">
-                    <FileDownload />
-                  </IconButton>
-                  <IconButton size="small">
-                    <Delete />
-                  </IconButton>
-                </Box>
-              </CardActions>
-            </Card>
-          </Grid>
+                <Button variant="ghost" size="icon">
+                  <Share2 className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon">
+                  <Download className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardFooter>
+          </Card>
         ))}
-      </Grid>
+      </div>
 
       {/* 创建表单对话框 */}
-      <Dialog open={isCreateDialogOpen} onClose={() => setIsCreateDialogOpen(false)}>
-        <DialogTitle>创建二维码表单</DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: '400px', mt: '1rem' }}>
-            <TextField
-              label="表单名称"
-              fullWidth
-            />
-            <FormControl fullWidth>
-              <InputLabel>表单类型</InputLabel>
-              <Select defaultValue="checkin">
-                <MenuItem value="checkin">签到表</MenuItem>
-                <MenuItem value="registration">登记表</MenuItem>
-                <MenuItem value="survey">调查问卷</MenuItem>
-                <MenuItem value="feedback">反馈表</MenuItem>
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>创建二维码表单</DialogTitle>
+            <DialogDescription>
+              输入表单信息来创建新的二维码表单
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="formName">表单名称</Label>
+              <Input id="formName" placeholder="输入表单名称" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="formType">表单类型</Label>
+              <Select>
+                <SelectTrigger id="formType">
+                  <SelectValue placeholder="选择表单类型" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="checkin">签到表</SelectItem>
+                  <SelectItem value="registration">登记表</SelectItem>
+                  <SelectItem value="survey">调查问卷</SelectItem>
+                  <SelectItem value="feedback">反馈表</SelectItem>
+                </SelectContent>
               </Select>
-            </FormControl>
-            <TextField
-              label="表单描述"
-              multiline
-              rows={3}
-              fullWidth
-            />
-          </Box>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="formDescription">表单描述</Label>
+              <Input id="formDescription" placeholder="输入表单描述" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+              取消
+            </Button>
+            <Button onClick={() => {
+              setIsCreateDialogOpen(false);
+              toast({
+                title: "表单创建成功",
+                description: "新的二维码表单已创建",
+              });
+            }}>
+              创建
+            </Button>
+          </DialogFooter>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setIsCreateDialogOpen(false)}>取消</Button>
-          <Button variant="contained">创建</Button>
-        </DialogActions>
       </Dialog>
-
-      {/* 编辑表单对话框 */}
-      <Dialog open={!!selectedForm} onClose={() => setSelectedForm(null)}>
-        <DialogTitle>编辑二维码表单</DialogTitle>
-        <DialogContent>
-          {selectedForm && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: '400px', mt: '1rem' }}>
-              <TextField
-                label="表单名称"
-                defaultValue={selectedForm.name}
-                fullWidth
-              />
-              <FormControl fullWidth>
-                <InputLabel>表单类型</InputLabel>
-                <Select defaultValue={selectedForm.type}>
-                  <MenuItem value="checkin">签到表</MenuItem>
-                  <MenuItem value="registration">登记表</MenuItem>
-                  <MenuItem value="survey">调查问卷</MenuItem>
-                  <MenuItem value="feedback">反馈表</MenuItem>
-                </Select>
-              </FormControl>
-              <TextField
-                label="表单描述"
-                multiline
-                rows={3}
-                fullWidth
-              />
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setSelectedForm(null)}>取消</Button>
-          <Button variant="contained">保存</Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+    </div>
   );
 };
 

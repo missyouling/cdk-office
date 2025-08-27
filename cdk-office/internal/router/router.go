@@ -36,14 +36,26 @@ import (
 	_ "github.com/linux-do/cdk-office/docs"
 	"github.com/linux-do/cdk-office/internal/apps/admin"
 	"github.com/linux-do/cdk-office/internal/apps/ai"
+	"github.com/linux-do/cdk-office/internal/apps/approval"
+	"github.com/linux-do/cdk-office/internal/apps/contract"
 	"github.com/linux-do/cdk-office/internal/apps/dashboard"
+	"github.com/linux-do/cdk-office/internal/apps/filepreview"
 	"github.com/linux-do/cdk-office/internal/apps/health"
+	"github.com/linux-do/cdk-office/internal/apps/knowledge"
+	"github.com/linux-do/cdk-office/internal/apps/notification"
 	"github.com/linux-do/cdk-office/internal/apps/oauth"
 	"github.com/linux-do/cdk-office/internal/apps/ocr"
+	"github.com/linux-do/cdk-office/internal/apps/pdf"
 	"github.com/linux-do/cdk-office/internal/apps/project"
 	"github.com/linux-do/cdk-office/internal/apps/qrcode"
+	"github.com/linux-do/cdk-office/internal/apps/schedule"
+	"github.com/linux-do/cdk-office/internal/apps/survey"
+	"github.com/linux-do/cdk-office/internal/apps/workflows"
 	"github.com/linux-do/cdk-office/internal/config"
+	"github.com/linux-do/cdk-office/internal/db"
+	"github.com/linux-do/cdk-office/internal/middleware"
 	"github.com/linux-do/cdk-office/internal/otel_trace"
+	"github.com/linux-do/cdk-office/internal/services/optimization"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
@@ -85,6 +97,15 @@ func Serve() {
 		},
 	)
 	r.Use(sessions.Sessions(config.Config.App.SessionCookieName, sessionStore))
+
+	// 性能优化中间件
+	optimizationConfig := middleware.DefaultOptimizationConfig()
+	optimizationMiddleware := middleware.SetupOptimizationMiddleware(r, optimizationConfig)
+
+	// 初始化优化模块
+	if err := optimization.InitOptimizationModule(db.GetDB(), nil, nil); err != nil {
+		log.Printf("[WARNING] Failed to initialize optimization module: %v", err)
+	}
 
 	// 补充中间件
 	r.Use(otelgin.Middleware(config.Config.App.AppName), loggerMiddleware())
@@ -137,27 +158,19 @@ func Serve() {
 				dashboardRouter.GET("/stats/all", dashboard.GetAllStats)
 			}
 
-			// AI (Dify集成)
-			aiRouter := apiV1Router.Group("/ai")
-			aiRouter.Use(oauth.LoginRequired())
-			{
-				aiRouter.POST("/chat", ai.Chat)
-				aiRouter.POST("/knowledge-sync", ai.SyncKnowledge)
-				aiRouter.GET("/knowledge-status", ai.GetKnowledgeSyncStatus)
-			}
+			// AI Services (with fallback support)
+			aiRouterInstance := ai.NewRouter(db.GetDB())
+			aiRouterInstance.RegisterRoutes(apiV1Router)
 
-			// OCR
-			ocrRouter := apiV1Router.Group("/ocr")
-			ocrRouter.Use(oauth.LoginRequired())
-			{
-				ocrRouter.POST("/process", ocr.ProcessDocument)
-				ocrRouter.GET("/providers", ocr.ListProviders)
-				ocrRouter.POST("/providers/test", ocr.TestProvider)
-			}
+			// OCR Services (with fallback support)
+			ocrRouterInstance := ocr.NewRouter(db.GetDB())
+			ocrRouterInstance.RegisterRoutes(apiV1Router)
 
 			// QRCode
 			qrRouter := apiV1Router.Group("/qrcode")
 			qrRouter.Use(oauth.LoginRequired())
+			// 应用标准API限流
+			optimizationMiddleware.ApplyRateLimiting(qrRouter, "api")
 			{
 				// 表单管理
 				qrRouter.POST("/forms", qrcode.CreateForm)
@@ -174,6 +187,92 @@ func Serve() {
 				qrRouter.POST("/submit/:formId", qrcode.SubmitForm)
 				qrRouter.GET("/submissions/:formId", qrcode.ListSubmissions)
 			}
+
+			// Approval
+			approvalRouter := apiV1Router.Group("/approval")
+			approvalRouter.Use(oauth.LoginRequired())
+			{
+				approval.RegisterRoutes(approvalRouter)
+			}
+
+			// Notification
+			notificationRouter := apiV1Router.Group("/notification")
+			notificationRouter.Use(oauth.LoginRequired())
+			{
+				notification.RegisterRoutes(notificationRouter)
+			}
+
+			// Contract (电子合同)
+			contractRouter := apiV1Router.Group("/contract")
+			contractRouter.Use(oauth.LoginRequired())
+			{
+				contract.RegisterRoutes(contractRouter)
+			}
+
+			// Survey (调查问卷)
+			surveyRouter := apiV1Router.Group("/surveys")
+			surveyRouter.Use(oauth.LoginRequired())
+			{
+				survey.RegisterRoutes(surveyRouter)
+			}
+
+			// Survey 公开访问路由（无需认证）
+			publicSurveyRouter := apiV1Router.Group("/public/surveys")
+			{
+				survey.RegisterPublicRoutes(publicSurveyRouter)
+			}
+
+			// Workflows (工作流)
+			workflowHandler := workflows.NewHandler()
+			workflowRouter := apiV1Router.Group("/workflows")
+			workflowRouter.Use(oauth.LoginRequired())
+			{
+				workflowHandler.RegisterRoutes(workflowRouter)
+			}
+
+			// Schedule (调度系统)
+			scheduleHandler := schedule.NewHandler()
+			scheduleHandler.StartService() // 启动调度服务
+			scheduleRouter := apiV1Router.Group("/schedule")
+			scheduleRouter.Use(oauth.LoginRequired())
+			{
+				scheduleHandler.RegisterRoutes(scheduleRouter)
+			}
+
+			// PDF Processing (PDF处理)
+			pdfHandler := pdf.NewHandler()
+			pdfRouter := apiV1Router.Group("/pdf")
+			pdfRouter.Use(oauth.LoginRequired())
+			// 应用上传限流和缓存
+			optimizationMiddleware.ApplyRateLimiting(pdfRouter, "upload")
+			optimizationMiddleware.ApplyCaching(pdfRouter)
+			{
+				pdfHandler.RegisterRoutes(pdfRouter)
+			}
+
+			// Knowledge Base (个人知识库)
+			knowledgeHandler := knowledge.NewHandler()
+			knowledgeRouter := apiV1Router.Group("/")
+			knowledgeRouter.Use(oauth.LoginRequired())
+			// 应用缓存中间件提高查询性能
+			optimizationMiddleware.ApplyCaching(knowledgeRouter)
+			{
+				knowledgeHandler.RegisterRoutes(knowledgeRouter)
+			}
+
+			// File Preview (文件预览)
+			filePreviewHandler := filepreview.NewHandler()
+			filePreviewRouter := apiV1Router.Group("/preview")
+			filePreviewRouter.Use(oauth.LoginRequired())
+			// 应用缓存和限流
+			optimizationMiddleware.ApplyRateLimiting(filePreviewRouter, "api")
+			optimizationMiddleware.ApplyCaching(filePreviewRouter)
+			{
+				filePreviewHandler.RegisterRoutes(filePreviewRouter)
+			}
+
+			// 系统优化管理
+			optimization.RegisterOptimizationRoutes(apiV1Router)
 
 			// Admin
 			adminRouter := apiV1Router.Group("/admin")

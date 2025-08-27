@@ -156,4 +156,7 @@ help:
 	@echo "  make docs         # Generate documentation"
 	@echo "  make deploy-vps   # Deploy to VPS"
 	@echo "  make stop-vps     # Stop VPS service"
-	@echo "  make help         # Show this help"
+	@echo "  make help         # Show this help
+
+# 包含测试相关命令
+include test.mk"

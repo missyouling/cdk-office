@@ -28,6 +28,7 @@ import (
 	"log"
 
 	"github.com/linux-do/cdk-office/internal/db"
+	"github.com/linux-do/cdk-office/internal/models"
 	"gorm.io/gorm"
 )
 
@@ -41,8 +42,45 @@ func Migrate() {
 	
 	// 执行自动迁移
 	if err := database.AutoMigrate(
-		// 在这里添加需要迁移的模型
-		// 例如：&models.User{}, &models.Project{},
+		// 原有模型
+		&models.Document{},
+		&models.DocumentVersion{},
+		&models.DocumentTag{},
+		&models.DocumentTagRelation{},
+		&models.User{},
+		&models.Approval{},
+		&models.Notification{},
+		&models.QRCode{},
+		&models.QRCodeForm{},
+		&models.QRCodeFormField{},
+		&models.QRCodeRecord{},
+		&models.Archive{},
+		&models.ArchiveRule{},
+		&models.ArchiveLog{},
+		&models.AIService{},
+		&models.AIServiceConfig{},
+		&models.OCRTask{},
+		&models.OCRResult{},
+		
+		// 新增合同相关模型
+		&models.Contract{},
+		&models.ContractSigner{},
+		&models.ContractTemplate{},
+		&models.ContractLog{},
+		&models.ContractFile{},
+		&models.KnowledgeSubmission{},
+		&models.ContractServiceConfig{},
+		&models.ContractWorkflow{},
+		&models.ContractStatistics{},
+		&models.ContractNotification{},
+		
+		// 新增问卷调查相关模型
+		&models.Survey{},
+		&models.SurveyResponse{},
+		&models.SurveyAnalysis{},
+		&models.SurveyPermission{},
+		&models.SurveyTemplate{},
+		&models.SurveyFile{},
 	); err != nil {
 		log.Fatalf("[MIGRATOR] failed to migrate database: %v", err)
 	}
