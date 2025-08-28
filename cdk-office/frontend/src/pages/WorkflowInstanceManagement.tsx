@@ -2,57 +2,61 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Box,
-  Typography,
-  Paper,
+  Eye,
+  Square,
+  Play,
+  RefreshCw,
+  CheckCircle2,
+  X,
+  Clock,
+  AlertTriangle,
+  MessageSquare,
+  User,
+  CalendarClock,
+  Activity,
+  Filter,
+  Search,
+} from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
   Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
+  TableHeader,
   TableRow,
-  Button,
-  Chip,
-  IconButton,
-  Tooltip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  CircularProgress,
-  Alert,
-  Card,
-  CardContent,
-  Grid,
-  Timeline,
-  TimelineItem,
-  TimelineSeparator,
-  TimelineConnector,
-  TimelineContent,
-  TimelineDot,
-  TimelineOppositeContent,
-  LinearProgress,
-  Tabs,
-  Tab,
-} from '@mui/material';
+} from '@/components/ui/table';
+import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 import {
-  Visibility as ViewIcon,
-  Stop as StopIcon,
-  PlayArrow as StartIcon,
-  Refresh as RefreshIcon,
-  CheckCircle as CompleteIcon,
-  Cancel as CancelIcon,
-  Pending as PendingIcon,
-  Error as ErrorIcon,
-  Comment as CommentIcon,
-  Person as PersonIcon,
-  Schedule as ScheduleIcon,
-} from '@mui/icons-material';
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { toast } from '@/components/ui/use-toast';
 
 // 工作流实例接口
 interface WorkflowInstance {
@@ -96,20 +100,6 @@ interface WorkflowHistory {
   details: string;
   stepName?: string;
 }
-
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
-  return (
-    <div hidden={value !== index}>
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
-    </div>
-  );
-};
 
 const WorkflowInstanceManagement: React.FC = () => {
   const [instances, setInstances] = useState<WorkflowInstance[]>([]);
@@ -249,10 +239,6 @@ const WorkflowInstanceManagement: React.FC = () => {
 
   // 停止实例
   const handleStopInstance = async (instance: WorkflowInstance) => {
-    if (!window.confirm(`确认停止工作流实例"${instance.definitionName}"吗？`)) {
-      return;
-    }
-
     try {
       const response = await fetch(`/api/v1/workflow/instances/${instance.id}/stop`, {
         method: 'POST',
@@ -264,13 +250,20 @@ const WorkflowInstanceManagement: React.FC = () => {
         setInstances(prev => prev.map(inst => 
           inst.id === instance.id ? { ...inst, status: 'cancelled' } : inst
         ));
-        alert('工作流实例已停止');
+        toast({
+          title: "成功",
+          description: "工作流实例已停止",
+        });
       } else {
         throw new Error('停止失败');
       }
     } catch (error) {
       console.error('停止工作流实例失败:', error);
-      alert('停止失败，请重试');
+      toast({
+        title: "错误",
+        description: "停止失败，请重试",
+        variant: "destructive",
+      });
     }
   };
 
@@ -285,13 +278,20 @@ const WorkflowInstanceManagement: React.FC = () => {
         setInstances(prev => prev.map(inst => 
           inst.id === instance.id ? { ...inst, status: 'running' } : inst
         ));
-        alert('工作流实例已重启');
+        toast({
+          title: "成功",
+          description: "工作流实例已重启",
+        });
       } else {
         throw new Error('重启失败');
       }
     } catch (error) {
       console.error('重启工作流实例失败:', error);
-      alert('重启失败，请重试');
+      toast({
+        title: "错误",
+        description: "重启失败，请重试",
+        variant: "destructive",
+      });
     }
   };
 
@@ -341,17 +341,6 @@ const WorkflowInstanceManagement: React.FC = () => {
     }
   };
 
-  // 获取任务状态图标
-  const getTaskStatusIcon = (status: string) => {
-    switch (status) {
-      case 'pending': return <PendingIcon color="warning" />;
-      case 'in_progress': return <CircularProgress size={20} />;
-      case 'completed': return <CompleteIcon color="success" />;
-      case 'rejected': return <CancelIcon color="error" />;
-      default: return <PendingIcon />;
-    }
-  };
-
   // 格式化日期
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('zh-CN');
@@ -371,349 +360,431 @@ const WorkflowInstanceManagement: React.FC = () => {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
-      </Box>
+      <div className="container mx-auto p-6">
+        <div className="space-y-6">
+          <Skeleton className="h-8 w-48" />
+          <div className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <Card key={i}>
+                <CardHeader>
+                  <div className="flex justify-between">
+                    <Skeleton className="h-6 w-1/3" />
+                    <Skeleton className="h-6 w-16" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-2 w-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Box sx={{ width: '100%', p: 3 }}>
+    <div className="container mx-auto p-6">
       {/* 页面标题和过滤器 */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" component="h1">
-          工作流实例管理
-        </Typography>
-        <Box display="flex" alignItems="center" gap={2}>
-          <FormControl size="small" sx={{ minWidth: 120 }}>
-            <InputLabel>状态筛选</InputLabel>
-            <Select
-              value={statusFilter}
-              label="状态筛选"
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <MenuItem value="all">全部</MenuItem>
-              <MenuItem value="running">运行中</MenuItem>
-              <MenuItem value="completed">已完成</MenuItem>
-              <MenuItem value="failed">失败</MenuItem>
-              <MenuItem value="cancelled">已取消</MenuItem>
-              <MenuItem value="paused">暂停</MenuItem>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">工作流实例管理</h1>
+          <p className="text-muted-foreground mt-1">监控和管理正在运行的工作流实例</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4" />
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-32">
+                <SelectValue placeholder="状态筛选" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">全部</SelectItem>
+                <SelectItem value="running">运行中</SelectItem>
+                <SelectItem value="completed">已完成</SelectItem>
+                <SelectItem value="failed">失败</SelectItem>
+                <SelectItem value="cancelled">已取消</SelectItem>
+                <SelectItem value="paused">暂停</SelectItem>
+              </SelectContent>
             </Select>
-          </FormControl>
-          <IconButton onClick={fetchInstances} color="primary">
-            <RefreshIcon />
-          </IconButton>
-        </Box>
-      </Box>
+          </div>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="icon" onClick={fetchInstances}>
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>刷新</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      </div>
 
       {/* 实例列表 */}
       {instances.length === 0 ? (
-        <Alert severity="info">暂无工作流实例</Alert>
+        <Card className="flex flex-col items-center justify-center py-16">
+          <Activity className="h-12 w-12 text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold">暂无工作流实例</h3>
+          <p className="text-muted-foreground text-center max-w-sm mt-2">
+            当前没有正在运行或历史的工作流实例
+          </p>
+        </Card>
       ) : (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>实例ID</TableCell>
-                <TableCell>工作流名称</TableCell>
-                <TableCell>状态</TableCell>
-                <TableCell>当前步骤</TableCell>
-                <TableCell>进度</TableCell>
-                <TableCell>优先级</TableCell>
-                <TableCell>发起人</TableCell>
-                <TableCell>开始时间</TableCell>
-                <TableCell>持续时间</TableCell>
-                <TableCell>操作</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {instances.map((instance) => (
-                <TableRow key={instance.id} hover>
-                  <TableCell>{instance.id}</TableCell>
-                  <TableCell>{instance.definitionName}</TableCell>
-                  <TableCell>
-                    <Chip 
-                      label={getStatusLabel(instance.status)}
-                      color={getStatusColor(instance.status)}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>{instance.currentStep}</TableCell>
-                  <TableCell>
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <LinearProgress 
-                        variant="determinate" 
-                        value={instance.progress} 
-                        sx={{ width: 80 }}
-                      />
-                      <Typography variant="caption">
-                        {instance.progress}%
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Chip 
-                      label={getPriorityLabel(instance.priority)}
-                      color={getPriorityColor(instance.priority)}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>{instance.startedBy}</TableCell>
-                  <TableCell>{formatDate(instance.startedAt)}</TableCell>
-                  <TableCell>
-                    {getDuration(instance.startedAt, instance.completedAt)}
-                  </TableCell>
-                  <TableCell>
-                    <Tooltip title="查看详情">
-                      <IconButton 
-                        size="small" 
-                        onClick={() => handleViewInstance(instance)}
+        <div className="space-y-4">
+          {instances.map((instance) => (
+            <Card key={instance.id} className="hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex justify-between items-start">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-lg">{instance.definitionName}</CardTitle>
+                      <Badge 
+                        variant={instance.status === 'running' ? 'default' : 
+                                instance.status === 'completed' ? 'secondary' : 
+                                instance.status === 'failed' ? 'destructive' : 'outline'}
                       >
-                        <ViewIcon />
-                      </IconButton>
-                    </Tooltip>
+                        {getStatusLabel(instance.status)}
+                      </Badge>
+                      <Badge 
+                        variant={instance.priority === 'urgent' ? 'destructive' : 
+                                instance.priority === 'high' ? 'secondary' : 'outline'}
+                      >
+                        {getPriorityLabel(instance.priority)}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      ID: {instance.id} • 当前步骤: {instance.currentStep}
+                    </p>
+                  </div>
+                  <div className="flex gap-1">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleViewInstance(instance)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>查看详情</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    
                     {instance.status === 'running' && (
-                      <Tooltip title="停止">
-                        <IconButton 
-                          size="small" 
-                          color="error"
-                          onClick={() => handleStopInstance(instance)}
-                        >
-                          <StopIcon />
-                        </IconButton>
-                      </Tooltip>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-red-600"
+                              onClick={() => handleStopInstance(instance)}
+                            >
+                              <Square className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>停止</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     )}
+                    
                     {(instance.status === 'failed' || instance.status === 'cancelled') && (
-                      <Tooltip title="重启">
-                        <IconButton 
-                          size="small" 
-                          color="primary"
-                          onClick={() => handleRestartInstance(instance)}
-                        >
-                          <StartIcon />
-                        </IconButton>
-                      </Tooltip>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-green-600"
+                              onClick={() => handleRestartInstance(instance)}
+                            >
+                              <Play className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>重启</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                  </div>
+                </div>
+              </CardHeader>
+              
+              <CardContent className="pt-0">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                  <div className="flex items-center gap-2 text-sm">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span>发起人: {instance.startedBy}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <CalendarClock className="h-4 w-4 text-muted-foreground" />
+                    <span>开始: {formatDate(instance.startedAt)}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <span>持续: {getDuration(instance.startedAt, instance.completedAt)}</span>
+                  </div>
+                  {instance.assignedTo && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <span>当前处理: {instance.assignedTo}</span>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">进度:</span>
+                  <Progress value={instance.progress} className="flex-1" />
+                  <span className="text-sm font-medium">{instance.progress}%</span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
 
       {/* 实例详情对话框 */}
-      <Dialog 
-        open={openDialog} 
-        onClose={() => setOpenDialog(false)} 
-        maxWidth="lg" 
-        fullWidth
-      >
-        <DialogTitle>
-          工作流实例详情 - {selectedInstance?.definitionName}
-        </DialogTitle>
-        
-        <DialogContent sx={{ p: 0 }}>
-          <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
-            <Tab label="基本信息" />
-            <Tab label="任务列表" />
-            <Tab label="执行历史" />
-            <Tab label="输入输出" />
-          </Tabs>
+      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              工作流实例详情 - {selectedInstance?.definitionName}
+            </DialogTitle>
+            <DialogDescription>
+              查看工作流实例的详细信息、任务和执行历史
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <Tabs value={tabValue.toString()} onValueChange={(value) => setTabValue(parseInt(value))}>
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="0">基本信息</TabsTrigger>
+                <TabsTrigger value="1">任务列表</TabsTrigger>
+                <TabsTrigger value="2">执行历史</TabsTrigger>
+                <TabsTrigger value="3">输入输出</TabsTrigger>
+              </TabsList>
 
-          {/* 基本信息 */}
-          <TabPanel value={tabValue} index={0}>
-            {selectedInstance && (
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
+              {/* 基本信息 */}
+              <TabsContent value="0" className="space-y-4 mt-4">
+                {selectedInstance && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">实例信息</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label className="text-sm font-medium text-muted-foreground">实例ID</Label>
+                          <p className="text-sm mt-1">{selectedInstance.id}</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-muted-foreground">工作流名称</Label>
+                          <p className="text-sm mt-1">{selectedInstance.definitionName}</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-muted-foreground">状态</Label>
+                          <div className="mt-1">
+                            <Badge 
+                              variant={selectedInstance.status === 'running' ? 'default' : 
+                                      selectedInstance.status === 'completed' ? 'secondary' : 
+                                      selectedInstance.status === 'failed' ? 'destructive' : 'outline'}
+                            >
+                              {getStatusLabel(selectedInstance.status)}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-muted-foreground">当前步骤</Label>
+                          <p className="text-sm mt-1">{selectedInstance.currentStep}</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-muted-foreground">进度</Label>
+                          <div className="mt-2 flex items-center gap-2">
+                            <Progress value={selectedInstance.progress} className="flex-1" />
+                            <span className="text-sm font-medium">{selectedInstance.progress}%</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">时间信息</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label className="text-sm font-medium text-muted-foreground">发起人</Label>
+                          <p className="text-sm mt-1">{selectedInstance.startedBy}</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-muted-foreground">开始时间</Label>
+                          <p className="text-sm mt-1">{formatDate(selectedInstance.startedAt)}</p>
+                        </div>
+                        {selectedInstance.completedAt && (
+                          <div>
+                            <Label className="text-sm font-medium text-muted-foreground">完成时间</Label>
+                            <p className="text-sm mt-1">{formatDate(selectedInstance.completedAt)}</p>
+                          </div>
+                        )}
+                        <div>
+                          <Label className="text-sm font-medium text-muted-foreground">持续时间</Label>
+                          <p className="text-sm mt-1">
+                            {getDuration(selectedInstance.startedAt, selectedInstance.completedAt)}
+                          </p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-muted-foreground">优先级</Label>
+                          <div className="mt-1">
+                            <Badge 
+                              variant={selectedInstance.priority === 'urgent' ? 'destructive' : 
+                                      selectedInstance.priority === 'high' ? 'secondary' : 'outline'}
+                            >
+                              {getPriorityLabel(selectedInstance.priority)}
+                            </Badge>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* 任务列表 */}
+              <TabsContent value="1" className="mt-4">
+                {selectedInstance?.tasks.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold">暂无任务</h3>
+                    <p className="text-muted-foreground">该实例当前没有活跃任务</p>
+                  </div>
+                ) : (
+                  <div className="border rounded-lg">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>任务ID</TableHead>
+                          <TableHead>步骤名称</TableHead>
+                          <TableHead>处理人</TableHead>
+                          <TableHead>状态</TableHead>
+                          <TableHead>截止时间</TableHead>
+                          <TableHead>创建时间</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {selectedInstance?.tasks.map((task) => (
+                          <TableRow key={task.id}>
+                            <TableCell className="font-mono text-xs">{task.id}</TableCell>
+                            <TableCell>{task.stepName}</TableCell>
+                            <TableCell>{task.assigneeName}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                {task.status === 'pending' && <Clock className="h-4 w-4 text-orange-500" />}
+                                {task.status === 'in_progress' && <Activity className="h-4 w-4 text-blue-500" />}
+                                {task.status === 'completed' && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+                                {task.status === 'rejected' && <X className="h-4 w-4 text-red-500" />}
+                                <span className="text-sm">
+                                  {task.status === 'pending' ? '待处理' :
+                                   task.status === 'in_progress' ? '处理中' :
+                                   task.status === 'completed' ? '已完成' : '已拒绝'}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {task.dueDate ? formatDate(task.dueDate) : '-'}
+                            </TableCell>
+                            <TableCell>{formatDate(task.createdAt)}</TableCell>
+                          </TableRow>
+                        )) || []}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* 执行历史 */}
+              <TabsContent value="2" className="mt-4">
+                {selectedInstance?.history.length === 0 ? (
+                  <div className="text-center py-8">
+                    <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold">暂无执行历史</h3>
+                    <p className="text-muted-foreground">该实例尚无执行记录</p>
+                  </div>
+                ) : (
+                  <ScrollArea className="h-96">
+                    <div className="space-y-4">
+                      {selectedInstance?.history.map((hist, index) => (
+                        <div key={hist.id} className="flex gap-4">
+                          <div className="flex flex-col items-center">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                              {hist.action === 'started' && <Play className="h-4 w-4" />}
+                              {hist.action === 'completed' && <CheckCircle2 className="h-4 w-4" />}
+                              {hist.action === 'failed' && <AlertTriangle className="h-4 w-4" />}
+                              {hist.action === 'assigned' && <User className="h-4 w-4" />}
+                              {!['started', 'completed', 'failed', 'assigned'].includes(hist.action) && <Clock className="h-4 w-4" />}
+                            </div>
+                            {index < (selectedInstance?.history.length || 0) - 1 && (
+                              <div className="h-8 w-px bg-border" />
+                            )}
+                          </div>
+                          <div className="flex-1 space-y-1">
+                            <div className="flex items-center justify-between">
+                              <h4 className="text-sm font-medium">
+                                {hist.stepName || hist.action}
+                              </h4>
+                              <span className="text-xs text-muted-foreground">
+                                {formatDate(hist.timestamp)}
+                              </span>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              {hist.details} - {hist.actor}
+                            </p>
+                          </div>
+                        </div>
+                      )) || []}
+                    </div>
+                  </ScrollArea>
+                )}
+              </TabsContent>
+
+              {/* 输入输出 */}
+              <TabsContent value="3" className="mt-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">输入数据</CardTitle>
+                    </CardHeader>
                     <CardContent>
-                      <Typography variant="h6" gutterBottom>实例信息</Typography>
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="body2" color="textSecondary">实例ID</Typography>
-                        <Typography variant="body1">{selectedInstance.id}</Typography>
-                      </Box>
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="body2" color="textSecondary">工作流名称</Typography>
-                        <Typography variant="body1">{selectedInstance.definitionName}</Typography>
-                      </Box>
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="body2" color="textSecondary">状态</Typography>
-                        <Chip 
-                          label={getStatusLabel(selectedInstance.status)}
-                          color={getStatusColor(selectedInstance.status)}
-                          size="small"
-                        />
-                      </Box>
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="body2" color="textSecondary">当前步骤</Typography>
-                        <Typography variant="body1">{selectedInstance.currentStep}</Typography>
-                      </Box>
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="body2" color="textSecondary">进度</Typography>
-                        <Box display="flex" alignItems="center" gap={1}>
-                          <LinearProgress 
-                            variant="determinate" 
-                            value={selectedInstance.progress} 
-                            sx={{ flexGrow: 1 }}
-                          />
-                          <Typography variant="body2">
-                            {selectedInstance.progress}%
-                          </Typography>
-                        </Box>
-                      </Box>
+                      <ScrollArea className="h-64">
+                        <pre className="text-xs bg-muted p-3 rounded border overflow-auto">
+                          {JSON.stringify(selectedInstance?.input, null, 2)}
+                        </pre>
+                      </ScrollArea>
                     </CardContent>
                   </Card>
-                </Grid>
-                <Grid item xs={12} md={6}>
+                  
                   <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">输出数据</CardTitle>
+                    </CardHeader>
                     <CardContent>
-                      <Typography variant="h6" gutterBottom>时间信息</Typography>
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="body2" color="textSecondary">发起人</Typography>
-                        <Typography variant="body1">{selectedInstance.startedBy}</Typography>
-                      </Box>
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="body2" color="textSecondary">开始时间</Typography>
-                        <Typography variant="body1">{formatDate(selectedInstance.startedAt)}</Typography>
-                      </Box>
-                      {selectedInstance.completedAt && (
-                        <Box sx={{ mb: 2 }}>
-                          <Typography variant="body2" color="textSecondary">完成时间</Typography>
-                          <Typography variant="body1">{formatDate(selectedInstance.completedAt)}</Typography>
-                        </Box>
-                      )}
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="body2" color="textSecondary">持续时间</Typography>
-                        <Typography variant="body1">
-                          {getDuration(selectedInstance.startedAt, selectedInstance.completedAt)}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="body2" color="textSecondary">优先级</Typography>
-                        <Chip 
-                          label={getPriorityLabel(selectedInstance.priority)}
-                          color={getPriorityColor(selectedInstance.priority)}
-                          size="small"
-                        />
-                      </Box>
+                      <ScrollArea className="h-64">
+                        <pre className="text-xs bg-muted p-3 rounded border overflow-auto">
+                          {selectedInstance?.output 
+                            ? JSON.stringify(selectedInstance.output, null, 2)
+                            : '暂无输出数据'}
+                        </pre>
+                      </ScrollArea>
                     </CardContent>
                   </Card>
-                </Grid>
-              </Grid>
-            )}
-          </TabPanel>
-
-          {/* 任务列表 */}
-          <TabPanel value={tabValue} index={1}>
-            {selectedInstance?.tasks.length === 0 ? (
-              <Alert severity="info">暂无任务</Alert>
-            ) : (
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>任务ID</TableCell>
-                      <TableCell>步骤名称</TableCell>
-                      <TableCell>处理人</TableCell>
-                      <TableCell>状态</TableCell>
-                      <TableCell>截止时间</TableCell>
-                      <TableCell>创建时间</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {selectedInstance?.tasks.map((task) => (
-                      <TableRow key={task.id}>
-                        <TableCell>{task.id}</TableCell>
-                        <TableCell>{task.stepName}</TableCell>
-                        <TableCell>{task.assigneeName}</TableCell>
-                        <TableCell>
-                          <Box display="flex" alignItems="center" gap={1}>
-                            {getTaskStatusIcon(task.status)}
-                            <Typography variant="body2">
-                              {task.status === 'pending' ? '待处理' :
-                               task.status === 'in_progress' ? '处理中' :
-                               task.status === 'completed' ? '已完成' : '已拒绝'}
-                            </Typography>
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          {task.dueDate ? formatDate(task.dueDate) : '-'}
-                        </TableCell>
-                        <TableCell>{formatDate(task.createdAt)}</TableCell>
-                      </TableRow>
-                    )) || []}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
-          </TabPanel>
-
-          {/* 执行历史 */}
-          <TabPanel value={tabValue} index={2}>
-            {selectedInstance?.history.length === 0 ? (
-              <Alert severity="info">暂无执行历史</Alert>
-            ) : (
-              <Timeline>
-                {selectedInstance?.history.map((hist) => (
-                  <TimelineItem key={hist.id}>
-                    <TimelineOppositeContent sx={{ m: 'auto 0' }} variant="body2" color="textSecondary">
-                      {formatDate(hist.timestamp)}
-                    </TimelineOppositeContent>
-                    <TimelineSeparator>
-                      <TimelineDot color="primary">
-                        {hist.action === 'started' ? <StartIcon /> :
-                         hist.action === 'completed' ? <CompleteIcon /> :
-                         hist.action === 'failed' ? <ErrorIcon /> :
-                         hist.action === 'assigned' ? <PersonIcon /> : 
-                         <ScheduleIcon />}
-                      </TimelineDot>
-                      <TimelineConnector />
-                    </TimelineSeparator>
-                    <TimelineContent sx={{ py: '12px', px: 2 }}>
-                      <Typography variant="h6" component="span">
-                        {hist.stepName || hist.action}
-                      </Typography>
-                      <Typography color="textSecondary">
-                        {hist.details} - {hist.actor}
-                      </Typography>
-                    </TimelineContent>
-                  </TimelineItem>
-                )) || []}
-              </Timeline>
-            )}
-          </TabPanel>
-
-          {/* 输入输出 */}
-          <TabPanel value={tabValue} index={3}>
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <Typography variant="h6" gutterBottom>输入数据</Typography>
-                <Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
-                  <pre>
-                    {JSON.stringify(selectedInstance?.input, null, 2)}
-                  </pre>
-                </Paper>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Typography variant="h6" gutterBottom>输出数据</Typography>
-                <Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
-                  <pre>
-                    {selectedInstance?.output 
-                      ? JSON.stringify(selectedInstance.output, null, 2)
-                      : '暂无输出数据'}
-                  </pre>
-                </Paper>
-              </Grid>
-            </Grid>
-          </TabPanel>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
         </DialogContent>
-        
-        <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>关闭</Button>
-        </DialogActions>
       </Dialog>
-    </Box>
+    </div>
   );
 };
 

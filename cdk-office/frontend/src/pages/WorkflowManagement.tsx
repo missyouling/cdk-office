@@ -2,42 +2,65 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Box,
-  Typography,
-  Paper,
-  Button,
-  Chip,
-  IconButton,
-  Tooltip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  CircularProgress,
-  Alert,
-  Card,
-  CardContent,
-  CardActions,
-  Grid,
-  Tabs,
-  Tab,
-  FormControlLabel,
-  Switch,
-} from '@mui/material';
+  Plus,
+  Edit,
+  Trash2,
+  Eye,
+  Play,
+  Square,
+  RefreshCw,
+  Settings,
+  Users,
+  Clock,
+  AlertCircle,
+  CheckCircle2,
+} from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Visibility as ViewIcon,
-  PlayArrow as StartIcon,
-  Stop as StopIcon,
-  Refresh as RefreshIcon,
-} from '@mui/icons-material';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { toast } from '@/components/ui/use-toast';
 
 // 工作流定义接口
 interface WorkflowDefinition {
@@ -77,20 +100,6 @@ interface WorkflowConfig {
   escalationEnabled: boolean;
   escalationTimeout: number;
 }
-
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
-  return (
-    <div hidden={value !== index}>
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
-    </div>
-  );
-};
 
 const WorkflowManagement: React.FC = () => {
   const [workflows, setWorkflows] = useState<WorkflowDefinition[]>([]);
@@ -275,10 +284,6 @@ const WorkflowManagement: React.FC = () => {
 
   // 删除工作流
   const handleDelete = async (workflow: WorkflowDefinition) => {
-    if (!window.confirm(`确认删除工作流"${workflow.name}"吗？`)) {
-      return;
-    }
-
     try {
       const response = await fetch(`/api/v1/workflow/definitions/${workflow.id}`, {
         method: 'DELETE',
@@ -286,13 +291,20 @@ const WorkflowManagement: React.FC = () => {
       
       if (response.ok) {
         setWorkflows(prev => prev.filter(w => w.id !== workflow.id));
-        alert('工作流删除成功');
+        toast({
+          title: "成功",
+          description: "工作流删除成功",
+        });
       } else {
         throw new Error('删除失败');
       }
     } catch (error) {
       console.error('删除工作流失败:', error);
-      alert('删除工作流失败，请重试');
+      toast({
+        title: "错误",
+        description: "删除工作流失败，请重试",
+        variant: "destructive",
+      });
     }
   };
 
@@ -310,13 +322,20 @@ const WorkflowManagement: React.FC = () => {
         setWorkflows(prev => prev.map(w => 
           w.id === workflow.id ? { ...w, status: newStatus } : w
         ));
-        alert(`工作流已${newStatus === 'active' ? '启用' : '停用'}`);
+        toast({
+          title: "成功",
+          description: `工作流已${newStatus === 'active' ? '启用' : '停用'}`,
+        });
       } else {
         throw new Error('状态更新失败');
       }
     } catch (error) {
       console.error('更新工作流状态失败:', error);
-      alert('更新状态失败，请重试');
+      toast({
+        title: "错误",
+        description: "更新状态失败，请重试",
+        variant: "destructive",
+      });
     }
   };
 
@@ -347,13 +366,20 @@ const WorkflowManagement: React.FC = () => {
         }
         
         setOpenDialog(false);
-        alert(`工作流${dialogType === 'create' ? '创建' : '更新'}成功`);
+        toast({
+          title: "成功",
+          description: `工作流${dialogType === 'create' ? '创建' : '更新'}成功`,
+        });
       } else {
         throw new Error('保存失败');
       }
     } catch (error) {
       console.error('保存工作流失败:', error);
-      alert('保存失败，请重试');
+      toast({
+        title: "错误",
+        description: "保存失败，请重试",
+        variant: "destructive",
+      });
     }
   };
 
@@ -384,296 +410,385 @@ const WorkflowManagement: React.FC = () => {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
-      </Box>
+      <div className="container mx-auto p-6">
+        <div className="space-y-6">
+          <Skeleton className="h-8 w-48" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <Card key={i}>
+                <CardHeader>
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-16 w-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Box sx={{ width: '100%', p: 3 }}>
+    <div className="container mx-auto p-6">
       {/* 页面标题和操作按钮 */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" component="h1">
-          工作流管理
-        </Typography>
-        <Box>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleCreate}
-            sx={{ mr: 2 }}
-          >
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">工作流管理</h1>
+          <p className="text-muted-foreground mt-1">管理和配置工作流定义</p>
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={handleCreate} className="gap-2">
+            <Plus className="h-4 w-4" />
             创建工作流
           </Button>
-          <IconButton onClick={fetchWorkflows} color="primary">
-            <RefreshIcon />
-          </IconButton>
-        </Box>
-      </Box>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="icon" onClick={fetchWorkflows}>
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>刷新</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      </div>
 
       {/* 工作流列表 */}
       {workflows.length === 0 ? (
-        <Alert severity="info">暂无工作流定义</Alert>
+        <Card className="flex flex-col items-center justify-center py-12">
+          <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold">暂无工作流定义</h3>
+          <p className="text-muted-foreground text-center max-w-sm mt-2">
+            开始创建你的第一个工作流来自动化业务流程
+          </p>
+          <Button onClick={handleCreate} className="mt-4 gap-2">
+            <Plus className="h-4 w-4" />
+            创建工作流
+          </Button>
+        </Card>
       ) : (
-        <Grid container spacing={3}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {workflows.map((workflow) => (
-            <Grid item xs={12} md={6} lg={4} key={workflow.id}>
-              <Card>
-                <CardContent>
-                  <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
-                    <Typography variant="h6" component="h2" gutterBottom>
-                      {workflow.name}
-                    </Typography>
-                    <Chip 
-                      label={getStatusLabel(workflow.status)}
-                      color={getStatusColor(workflow.status)}
-                      size="small"
-                    />
-                  </Box>
-                  
-                  <Typography color="textSecondary" gutterBottom>
-                    {workflow.category}
-                  </Typography>
-                  
-                  <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-                    {workflow.description}
-                  </Typography>
-
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="caption" color="textSecondary">
-                      版本: {workflow.version} | 创建者: {workflow.createdBy}
-                    </Typography>
-                  </Box>
-
-                  {/* 统计信息 */}
-                  <Box sx={{ mb: 2, p: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
-                    <Grid container spacing={2}>
-                      <Grid item xs={6}>
-                        <Typography variant="caption" color="textSecondary">
-                          总实例: {workflow.statistics.totalInstances}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={6}>
-                        <Typography variant="caption" color="textSecondary">
-                          活跃: {workflow.statistics.activeInstances}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={6}>
-                        <Typography variant="caption" color="textSecondary">
-                          完成: {workflow.statistics.completedInstances}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={6}>
-                        <Typography variant="caption" color="textSecondary">
-                          成功率: {workflow.statistics.successRate}%
-                        </Typography>
-                      </Grid>
-                    </Grid>
-                  </Box>
-
-                  <Typography variant="caption" color="textSecondary">
-                    最后更新: {formatDate(workflow.updatedAt)}
-                  </Typography>
-                </CardContent>
-                
-                <CardActions>
-                  <Tooltip title="查看详情">
-                    <IconButton size="small" onClick={() => handleView(workflow)}>
-                      <ViewIcon />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="编辑">
-                    <IconButton size="small" onClick={() => handleEdit(workflow)}>
-                      <EditIcon />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title={workflow.status === 'active' ? '停用' : '启用'}>
-                    <IconButton 
-                      size="small" 
-                      onClick={() => handleToggleStatus(workflow)}
-                      color={workflow.status === 'active' ? 'error' : 'success'}
+            <Card key={workflow.id} className="group hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div className="space-y-1">
+                    <CardTitle className="text-lg">{workflow.name}</CardTitle>
+                    <Badge 
+                      variant={workflow.status === 'active' ? 'default' : 
+                              workflow.status === 'draft' ? 'secondary' : 'outline'}
                     >
-                      {workflow.status === 'active' ? <StopIcon /> : <StartIcon />}
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="删除">
-                    <IconButton 
-                      size="small" 
-                      color="error" 
-                      onClick={() => handleDelete(workflow)}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </Tooltip>
-                </CardActions>
-              </Card>
-            </Grid>
+                      {getStatusLabel(workflow.status)}
+                    </Badge>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    v{workflow.version}
+                  </div>
+                </div>
+              </CardHeader>
+              
+              <CardContent className="space-y-4">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">{workflow.category}</p>
+                  <p className="text-sm mt-1">{workflow.description}</p>
+                </div>
+
+                {/* 统计信息 */}
+                <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      总实例: {workflow.statistics.totalInstances}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Play className="h-3 w-3" />
+                      活跃: {workflow.statistics.activeInstances}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3" />
+                      完成: {workflow.statistics.completedInstances}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Settings className="h-3 w-3" />
+                      成功率: {workflow.statistics.successRate}%
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-xs text-muted-foreground">
+                  创建者: {workflow.createdBy} • 最后更新: {formatDate(workflow.updatedAt)}
+                </div>
+              </CardContent>
+              
+              <CardFooter className="flex justify-between">
+                <div className="flex gap-1">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="sm" onClick={() => handleView(workflow)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>查看详情</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="sm" onClick={() => handleEdit(workflow)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>编辑</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleToggleStatus(workflow)}
+                          className={workflow.status === 'active' ? 'text-orange-600' : 'text-green-600'}
+                        >
+                          {workflow.status === 'active' ? 
+                            <Square className="h-4 w-4" /> : 
+                            <Play className="h-4 w-4" />
+                          }
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {workflow.status === 'active' ? '停用' : '启用'}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>确认删除</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        你确定要删除工作流“{workflow.name}”吗？这个操作不可撤销。
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>取消</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={() => handleDelete(workflow)}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        删除
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </CardFooter>
+            </Card>
           ))}
-        </Grid>
+        </div>
       )}
 
       {/* 工作流详情/编辑对话框 */}
-      <Dialog 
-        open={openDialog} 
-        onClose={() => setOpenDialog(false)} 
-        maxWidth="lg" 
-        fullWidth
-      >
-        <DialogTitle>
-          {dialogType === 'create' ? '创建工作流' : 
-           dialogType === 'edit' ? '编辑工作流' : '工作流详情'}
-        </DialogTitle>
-        
-        <DialogContent sx={{ p: 0 }}>
-          <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
-            <Tab label="基本信息" />
-            <Tab label="工作流步骤" />
-            <Tab label="配置设置" />
-          </Tabs>
+      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {dialogType === 'create' ? '创建工作流' : 
+               dialogType === 'edit' ? '编辑工作流' : '工作流详情'}
+            </DialogTitle>
+            <DialogDescription>
+              {dialogType === 'create' ? '创建新的工作流定义' :
+               dialogType === 'edit' ? '修改工作流配置' : '查看工作流详细信息'}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <Tabs value={tabValue.toString()} onValueChange={(value) => setTabValue(parseInt(value))}>
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="0">基本信息</TabsTrigger>
+                <TabsTrigger value="1">工作流步骤</TabsTrigger>
+                <TabsTrigger value="2">配置设置</TabsTrigger>
+              </TabsList>
 
-          {/* 基本信息标签页 */}
-          <TabPanel value={tabValue} index={0}>
-            <Box sx={{ p: 2 }}>
-              <TextField
-                fullWidth
-                label="工作流名称"
-                value={dialogType === 'view' ? selectedWorkflow?.name || '' : formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                disabled={dialogType === 'view'}
-                sx={{ mb: 2 }}
-              />
-              
-              <TextField
-                fullWidth
-                label="描述"
-                multiline
-                rows={3}
-                value={dialogType === 'view' ? selectedWorkflow?.description || '' : formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                disabled={dialogType === 'view'}
-                sx={{ mb: 2 }}
-              />
-              
-              <Grid container spacing={2}>
-                <Grid item xs={6}>
-                  <TextField
-                    fullWidth
-                    label="分类"
-                    value={dialogType === 'view' ? selectedWorkflow?.category || '' : formData.category}
-                    onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                    disabled={dialogType === 'view'}
-                  />
-                </Grid>
-                <Grid item xs={6}>
-                  <FormControl fullWidth disabled={dialogType === 'view'}>
-                    <InputLabel>状态</InputLabel>
-                    <Select
-                      value={dialogType === 'view' ? selectedWorkflow?.status || '' : formData.status}
-                      label="状态"
-                      onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as any }))}
-                    >
-                      <MenuItem value="draft">草稿</MenuItem>
-                      <MenuItem value="active">活跃</MenuItem>
-                      <MenuItem value="inactive">停用</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-              </Grid>
-            </Box>
-          </TabPanel>
+              {/* 基本信息标签页 */}
+              <TabsContent value="0" className="space-y-4 mt-4">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="workflow-name">工作流名称</Label>
+                    <Input
+                      id="workflow-name"
+                      value={dialogType === 'view' ? selectedWorkflow?.name || '' : formData.name}
+                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                      disabled={dialogType === 'view'}
+                      placeholder="输入工作流名称"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="workflow-description">描述</Label>
+                    <Textarea
+                      id="workflow-description"
+                      rows={3}
+                      value={dialogType === 'view' ? selectedWorkflow?.description || '' : formData.description}
+                      onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                      disabled={dialogType === 'view'}
+                      placeholder="输入工作流描述"
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="workflow-category">分类</Label>
+                      <Input
+                        id="workflow-category"
+                        value={dialogType === 'view' ? selectedWorkflow?.category || '' : formData.category}
+                        onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                        disabled={dialogType === 'view'}
+                        placeholder="输入分类"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="workflow-status">状态</Label>
+                      <Select 
+                        value={dialogType === 'view' ? selectedWorkflow?.status || '' : formData.status}
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as any }))}
+                        disabled={dialogType === 'view'}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="选择状态" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="draft">草稿</SelectItem>
+                          <SelectItem value="active">活跃</SelectItem>
+                          <SelectItem value="inactive">停用</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
 
-          {/* 工作流步骤标签页 */}
-          <TabPanel value={tabValue} index={1}>
-            <Box sx={{ p: 2 }}>
-              <Typography variant="h6" gutterBottom>工作流步骤</Typography>
-              <Alert severity="info" sx={{ mb: 2 }}>
-                工作流步骤配置功能正在开发中，请使用API进行详细配置
-              </Alert>
-            </Box>
-          </TabPanel>
+              {/* 工作流步骤标签页 */}
+              <TabsContent value="1" className="space-y-4 mt-4">
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">工作流步骤</h3>
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-5 w-5 text-blue-600" />
+                      <p className="text-blue-800 font-medium">功能开发中</p>
+                    </div>
+                    <p className="text-blue-700 mt-2">
+                      工作流步骤配置功能正在开发中，请使用API进行详细配置
+                    </p>
+                  </div>
+                </div>
+              </TabsContent>
 
-          {/* 配置设置标签页 */}
-          <TabPanel value={tabValue} index={2}>
-            <Box sx={{ p: 2 }}>
-              <Typography variant="h6" gutterBottom>配置设置</Typography>
-              
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="超时时间（秒）"
-                    type="number"
-                    value={dialogType === 'view' ? selectedWorkflow?.config.timeout || 0 : formData.config.timeout}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      config: { ...prev.config, timeout: parseInt(e.target.value) }
-                    }))}
-                    disabled={dialogType === 'view'}
-                    sx={{ mb: 2 }}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="重试次数"
-                    type="number"
-                    value={dialogType === 'view' ? selectedWorkflow?.config.retryAttempts || 0 : formData.config.retryAttempts}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      config: { ...prev.config, retryAttempts: parseInt(e.target.value) }
-                    }))}
-                    disabled={dialogType === 'view'}
-                    sx={{ mb: 2 }}
-                  />
-                </Grid>
-              </Grid>
+              {/* 配置设置标签页 */}
+              <TabsContent value="2" className="space-y-4 mt-4">
+                <div className="space-y-6">
+                  <h3 className="text-lg font-semibold">配置设置</h3>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="timeout">超时时间（秒）</Label>
+                      <Input
+                        id="timeout"
+                        type="number"
+                        value={dialogType === 'view' ? selectedWorkflow?.config.timeout || 0 : formData.config.timeout}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          config: { ...prev.config, timeout: parseInt(e.target.value) }
+                        }))}
+                        disabled={dialogType === 'view'}
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="retryAttempts">重试次数</Label>
+                      <Input
+                        id="retryAttempts"
+                        type="number"
+                        value={dialogType === 'view' ? selectedWorkflow?.config.retryAttempts || 0 : formData.config.retryAttempts}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          config: { ...prev.config, retryAttempts: parseInt(e.target.value) }
+                        }))}
+                        disabled={dialogType === 'view'}
+                      />
+                    </div>
+                  </div>
 
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={dialogType === 'view' ? selectedWorkflow?.config.notificationEnabled || false : formData.config.notificationEnabled}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      config: { ...prev.config, notificationEnabled: e.target.checked }
-                    }))}
-                    disabled={dialogType === 'view'}
-                  />
-                }
-                label="启用通知"
-                sx={{ mb: 2 }}
-              />
+                  <Separator />
 
-              <br />
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>启用通知</Label>
+                        <p className="text-sm text-muted-foreground">
+                          在工作流执行过程中发送通知
+                        </p>
+                      </div>
+                      <Switch
+                        checked={dialogType === 'view' ? selectedWorkflow?.config.notificationEnabled || false : formData.config.notificationEnabled}
+                        onCheckedChange={(checked) => setFormData(prev => ({
+                          ...prev,
+                          config: { ...prev.config, notificationEnabled: checked }
+                        }))}
+                        disabled={dialogType === 'view'}
+                      />
+                    </div>
 
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={dialogType === 'view' ? selectedWorkflow?.config.escalationEnabled || false : formData.config.escalationEnabled}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      config: { ...prev.config, escalationEnabled: e.target.checked }
-                    }))}
-                    disabled={dialogType === 'view'}
-                  />
-                }
-                label="启用升级"
-                sx={{ mb: 2 }}
-              />
-            </Box>
-          </TabPanel>
-        </DialogContent>
-        
-        <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>取消</Button>
-          {dialogType !== 'view' && (
-            <Button variant="contained" onClick={handleSave}>
-              {dialogType === 'create' ? '创建' : '保存'}
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>启用升级</Label>
+                        <p className="text-sm text-muted-foreground">
+                          在超时时自动升级处理
+                        </p>
+                      </div>
+                      <Switch
+                        checked={dialogType === 'view' ? selectedWorkflow?.config.escalationEnabled || false : formData.config.escalationEnabled}
+                        onCheckedChange={(checked) => setFormData(prev => ({
+                          ...prev,
+                          config: { ...prev.config, escalationEnabled: checked }
+                        }))}
+                        disabled={dialogType === 'view'}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenDialog(false)}>
+              取消
             </Button>
-          )}
-        </DialogActions>
+            {dialogType !== 'view' && (
+              <Button onClick={handleSave}>
+                {dialogType === 'create' ? '创建' : '保存'}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
       </Dialog>
-    </Box>
+    </div>
   );
 };
 

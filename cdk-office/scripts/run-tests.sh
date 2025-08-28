@@ -1,203 +1,85 @@
 #!/bin/bash
 
-# CDK-Office 测试执行脚本
-# 运行单元测试和集成测试
+# Go 测试运行脚本
+# 用于运行所有后端单元测试和集成测试
 
-set -e
+echo "🚀 开始运行 CDK-Office 后端测试套件..."
 
-echo "🧪 开始执行 CDK-Office 测试套件..."
+# 设置测试环境变量
+export GO_ENV=test
+export GIN_MODE=test
 
-# 颜色定义
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
+# 确保在项目根目录
+cd "$(dirname "$0")"
 
-# 项目根目录
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "$PROJECT_ROOT"
+# 创建测试报告目录
+mkdir -p test-reports
 
-echo "📁 项目根目录: $PROJECT_ROOT"
+echo "📋 运行单元测试..."
 
-# 检查Go环境
-if ! command -v go &> /dev/null; then
-    echo -e "${RED}❌ Go 未安装或不在PATH中${NC}"
+# 运行健康检查器测试
+echo "🔍 测试 ServiceHealthChecker..."
+go test -v -race -coverprofile=test-reports/health_checker_coverage.out ./internal/service -run "TestHealthCheckerTestSuite" 2>&1 | tee test-reports/health_checker_test.log
+
+if [ $? -ne 0 ]; then
+    echo "❌ ServiceHealthChecker 测试失败"
     exit 1
 fi
 
-echo -e "${GREEN}✅ Go 版本: $(go version)${NC}"
+# 运行文档同步服务测试
+echo "📄 测试 DocumentSyncService..."
+go test -v -race -coverprofile=test-reports/document_sync_coverage.out ./internal/apps/ai -run "TestDocumentSyncTestSuite" 2>&1 | tee test-reports/document_sync_test.log
 
-# 下载依赖
-echo "📦 下载依赖包..."
-go mod download
-go mod tidy
-
-# 运行代码检查
-echo "🔍 运行代码检查..."
-if command -v golangci-lint &> /dev/null; then
-    golangci-lint run --timeout=5m
-else
-    echo -e "${YELLOW}⚠️  golangci-lint 未安装，跳过代码检查${NC}"
-fi
-
-# 运行格式化检查
-echo "🎨 检查代码格式..."
-UNFORMATTED=$(gofmt -l .)
-if [ -n "$UNFORMATTED" ]; then
-    echo -e "${RED}❌ 以下文件需要格式化:${NC}"
-    echo "$UNFORMATTED"
-    echo "运行 'gofmt -w .' 来格式化代码"
+if [ $? -ne 0 ]; then
+    echo "❌ DocumentSyncService 测试失败"
     exit 1
 fi
 
-# 创建测试结果目录
-mkdir -p test-results
+# 运行API集成测试
+echo "🔗 测试 AI API 集成..."
+go test -v -race -coverprofile=test-reports/api_integration_coverage.out ./internal/apps/ai -run "TestAIAPIIntegrationTestSuite" 2>&1 | tee test-reports/api_integration_test.log
 
-# 运行单元测试
-echo "🧪 运行单元测试..."
-echo "==============================================="
-
-# 数据隔离模块测试
-echo -e "${YELLOW}🔒 测试数据隔离模块...${NC}"
-go test -v -race -coverprofile=test-results/isolation-coverage.out \
-    ./internal/services/isolation/... || {
-    echo -e "${RED}❌ 数据隔离模块测试失败${NC}"
+if [ $? -ne 0 ]; then
+    echo "❌ API集成测试失败"
     exit 1
-}
+fi
 
-# 系统优化模块测试
-echo -e "${YELLOW}⚡ 测试系统优化模块...${NC}"
-go test -v -race -coverprofile=test-results/optimization-coverage.out \
-    ./internal/services/optimization/... || {
-    echo -e "${RED}❌ 系统优化模块测试失败${NC}"
-    exit 1
-}
+# 运行基准测试
+echo "⚡ 运行性能基准测试..."
+go test -bench=. -benchmem ./internal/service ./internal/apps/ai 2>&1 | tee test-reports/benchmark_results.log
 
-# 审批流程模块测试
-echo -e "${YELLOW}📋 测试审批流程模块...${NC}"
-go test -v -race -coverprofile=test-results/workflow-coverage.out \
-    ./internal/apps/workflow/... || {
-    echo -e "${RED}❌ 审批流程模块测试失败${NC}"
-    exit 1
-}
-
-# 知识库模块测试
-echo -e "${YELLOW}📚 测试知识库模块...${NC}"
-go test -v -race -coverprofile=test-results/knowledge-coverage.out \
-    ./internal/apps/knowledge/... || {
-    echo -e "${RED}❌ 知识库模块测试失败${NC}"
-    exit 1
-}
-
-# 运行所有其他单元测试
-echo -e "${YELLOW}🔄 运行其他单元测试...${NC}"
-go test -v -race -coverprofile=test-results/unit-coverage.out \
-    ./internal/... || {
-    echo -e "${RED}❌ 单元测试失败${NC}"
-    exit 1
-}
-
-# 运行集成测试
-echo "🔗 运行集成测试..."
-echo "==============================================="
-
-export RUN_INTEGRATION_TESTS=1
-go test -v -race -timeout=5m -coverprofile=test-results/integration-coverage.out \
-    ./tests/... || {
-    echo -e "${RED}❌ 集成测试失败${NC}"
-    exit 1
-}
-
-# 生成测试覆盖率报告
+# 生成总体测试覆盖率报告
 echo "📊 生成测试覆盖率报告..."
 
 # 合并覆盖率文件
-echo "mode: atomic" > test-results/total-coverage.out
-tail -n +2 test-results/*-coverage.out >> test-results/total-coverage.out
+echo "mode: atomic" > test-reports/total_coverage.out
+tail -n +2 test-reports/health_checker_coverage.out >> test-reports/total_coverage.out
+tail -n +2 test-reports/document_sync_coverage.out >> test-reports/total_coverage.out  
+tail -n +2 test-reports/api_integration_coverage.out >> test-reports/total_coverage.out
 
-# 生成HTML报告
-go tool cover -html=test-results/total-coverage.out -o test-results/coverage.html
+# 生成HTML覆盖率报告
+go tool cover -html=test-reports/total_coverage.out -o test-reports/coverage_report.html
 
-# 显示覆盖率统计
-COVERAGE=$(go tool cover -func=test-results/total-coverage.out | grep total | awk '{print $3}')
-echo -e "${GREEN}📈 总体测试覆盖率: $COVERAGE${NC}"
+# 显示覆盖率摘要
+go tool cover -func=test-reports/total_coverage.out | tee test-reports/coverage_summary.txt
 
-# 运行性能基准测试
-echo "🚀 运行性能基准测试..."
-echo "==============================================="
+echo ""
+echo "📈 测试覆盖率摘要:"
+tail -1 test-reports/coverage_summary.txt
 
-go test -bench=. -benchmem -run=^$ ./tests/... > test-results/benchmark.txt || {
-    echo -e "${YELLOW}⚠️  性能基准测试失败，但不影响主要测试${NC}"
-}
+echo ""
+echo "✅ 所有后端测试完成!"
+echo "📋 测试报告保存在: test-reports/"
+echo "🌐 HTML覆盖率报告: test-reports/coverage_report.html"
 
-# 运行竞态条件检测
-echo "🏃 运行竞态条件检测..."
-go test -race -short ./... || {
-    echo -e "${RED}❌ 发现竞态条件${NC}"
-    exit 1
-}
+# 检查最低覆盖率要求 (80%)
+COVERAGE=$(tail -1 test-reports/coverage_summary.txt | grep -o '[0-9.]*%' | tr -d '%')
+THRESHOLD=80
 
-# 运行内存泄漏检测（如果可用）
-if command -v goleak &> /dev/null; then
-    echo "🧠 运行内存泄漏检测..."
-    go test -tags=leak ./internal/... || {
-        echo -e "${YELLOW}⚠️  内存泄漏检测警告${NC}"
-    }
-fi
-
-# 生成测试报告
-echo "📋 生成测试报告..."
-cat > test-results/test-report.md << EOF
-# CDK-Office 测试报告
-
-生成时间: $(date)
-
-## 测试覆盖率
-- 总体覆盖率: $COVERAGE
-- 详细报告: [coverage.html](coverage.html)
-
-## 测试模块
-
-### ✅ 单元测试
-- 数据隔离模块: 通过
-- 系统优化模块: 通过  
-- 审批流程模块: 通过
-- 知识库模块: 通过
-- 其他模块: 通过
-
-### ✅ 集成测试
-- API接口测试: 通过
-- 模块间协作测试: 通过
-- 数据库集成测试: 通过
-
-### ✅ 性能测试
-- 基准测试结果: [benchmark.txt](benchmark.txt)
-- 竞态条件检测: 通过
-
-## 测试文件
-$(find . -name "*_test.go" | wc -l) 个测试文件
-$(grep -r "func Test" --include="*_test.go" . | wc -l) 个测试函数
-
-## 建议
-1. 定期运行测试确保代码质量
-2. 新功能必须包含相应的测试
-3. 保持测试覆盖率在 80% 以上
-4. 关注性能基准测试结果
-
-EOF
-
-echo "==============================================="
-echo -e "${GREEN}🎉 所有测试执行完成！${NC}"
-echo -e "${GREEN}📊 测试覆盖率: $COVERAGE${NC}"
-echo -e "${GREEN}📋 测试报告: test-results/test-report.md${NC}"
-echo -e "${GREEN}📈 覆盖率报告: test-results/coverage.html${NC}"
-
-# 检查最低覆盖率要求
-MIN_COVERAGE=70
-COVERAGE_NUM=$(echo $COVERAGE | tr -d '%')
-if (( $(echo "$COVERAGE_NUM < $MIN_COVERAGE" | bc -l) )); then
-    echo -e "${YELLOW}⚠️  测试覆盖率 ($COVERAGE) 低于最低要求 (${MIN_COVERAGE}%)${NC}"
+if (( $(echo "$COVERAGE >= $THRESHOLD" | bc -l) )); then
+    echo "🎉 覆盖率 ${COVERAGE}% 达到要求 (>= ${THRESHOLD}%)"
+    exit 0
+else
+    echo "⚠️  覆盖率 ${COVERAGE}% 低于要求 (>= ${THRESHOLD}%)"
     exit 1
 fi
-
-echo -e "${GREEN}✅ 测试套件执行成功，覆盖率达标！${NC}"

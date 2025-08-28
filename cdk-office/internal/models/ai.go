@@ -80,7 +80,7 @@ type KnowledgeQA struct {
 }
 
 // BeforeCreate 创建前钩子
-func (k *KnowledgeQAV2) BeforeCreate(tx *gorm.DB) error {
+func (k *KnowledgeQA) BeforeCreate(tx *gorm.DB) error {
 	if k.ID == "" {
 		k.ID = uuid.New().String()
 	}

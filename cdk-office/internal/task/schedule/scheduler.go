@@ -25,12 +25,14 @@
 package schedule
 
 import (
+	"fmt"
 	"log"
 	"time"
 
 	"github.com/linux-do/cdk-office/internal/config"
 	"github.com/linux-do/cdk-office/internal/db"
 	"github.com/linux-do/cdk-office/internal/logger"
+	"github.com/linux-do/cdk-office/internal/models"
 	"github.com/robfig/cron/v3"
 )
 
@@ -98,6 +100,16 @@ func (s *Scheduler) addJobs() {
 			log.Println("[SCHEDULER] archive job added")
 		}
 	}
+
+	// 日程提醒任务
+	if config.Config.Schedule.CalendarReminderCron != "" {
+		_, err := s.cron.AddFunc(config.Config.Schedule.CalendarReminderCron, s.checkCalendarReminders)
+		if err != nil {
+			log.Printf("[SCHEDULER] failed to add calendar reminder job: %v", err)
+		} else {
+			log.Println("[SCHEDULER] calendar reminder job added")
+		}
+	}
 }
 
 // syncDocuments 文档同步任务
@@ -131,4 +143,77 @@ func (s *Scheduler) archiveDocuments() {
 
 	logger.Info("document archive task completed")
 	logger.LogWithDuration(start, "document archive")
+}
+
+// checkCalendarReminders 检查日程提醒任务
+func (s *Scheduler) checkCalendarReminders() {
+	start := time.Now()
+	logger.Info("starting calendar reminder check task")
+
+	// 获取数据库连接
+	database := db.GetDB()
+	if database == nil {
+		log.Printf("[SCHEDULER] failed to get database connection")
+		return
+	}
+
+	// 计算时间范围：从现在开始15分钟内
+	now := time.Now()
+	reminderWindow := now.Add(15 * time.Minute)
+
+	// 查询即将开始的日程事件
+	var events []models.CalendarEvent
+	err := database.Where("start_time >= ? AND start_time <= ?", now, reminderWindow).
+		Find(&events).Error
+
+	if err != nil {
+		log.Printf("[SCHEDULER] failed to query calendar events: %v", err)
+		return
+	}
+
+	log.Printf("[SCHEDULER] found %d upcoming events in next 15 minutes", len(events))
+
+	// 为每个事件创建提醒通知
+	for _, event := range events {
+		// 检查是否已经发送过提醒
+		var existingNotification models.Notification
+		exists := database.Where("related_id = ? AND related_type = 'calendar_event' AND type = 'calendar_reminder'", event.ID).
+			First(&existingNotification).Error == nil
+
+		if exists {
+			continue // 已经发送过提醒，跳过
+		}
+
+		// 创建提醒
+		notification := models.Notification{
+			TeamID:      event.TeamID,
+			UserID:      event.UserID,
+			Title:       "日程提醒",
+			Content:     格式化事件提醒内容(&event),
+			Type:        "calendar_reminder",
+			Category:    "important",
+			Priority:    "normal",
+			RelatedID:   event.ID,
+			RelatedType: "calendar_event",
+			CreatedBy:   "system",
+		}
+
+		if err := database.Create(&notification).Error; err != nil {
+			log.Printf("[SCHEDULER] failed to create reminder notification for event %s: %v", event.ID, err)
+		} else {
+			log.Printf("[SCHEDULER] created reminder notification for event: %s", event.Title)
+		}
+	}
+
+	logger.Info("calendar reminder check task completed")
+	logger.LogWithDuration(start, "calendar reminder check")
+}
+
+// 格式化事件提醒内容
+func 格式化事件提醒内容(event *models.CalendarEvent) string {
+	startTime := event.StartTime.Format("15:04")
+	if event.AllDay {
+		return fmt.Sprintf("您的全天事件「%s」即将开始。", event.Title)
+	}
+	return fmt.Sprintf("您的日程「%s」将在 %s 开始。", event.Title, startTime)
 }

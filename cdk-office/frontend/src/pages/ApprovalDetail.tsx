@@ -2,36 +2,42 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Box,
-  Typography,
-  Paper,
-  Chip,
-  Button,
-  TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  CircularProgress,
-  Alert,
-  Divider,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  Avatar,
-} from '@mui/material';
+  CheckCircle,
+  X,
+  Clock,
+  History,
+  MessageSquare,
+  User,
+  Calendar,
+  FileText,
+  AlertTriangle,
+  ArrowLeft,
+} from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
-  CheckCircle as ApprovedIcon,
-  Cancel as RejectedIcon,
-  Pending as PendingIcon,
-  History as HistoryIcon,
-  Comment as CommentIcon,
-  Person as PersonIcon,
-  Event as EventIcon,
-  Description as DocumentIcon,
-  PriorityHigh as PriorityIcon,
-} from '@mui/icons-material';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { toast } from '@/components/ui/use-toast';
 
 // 审批历史记录接口
 interface ApprovalHistory {
@@ -143,10 +149,17 @@ const ApprovalDetailPage: React.FC<{ approvalId: string }> = ({ approvalId }) =>
       setComment('');
       
       // 显示成功消息
-      alert(`审批${dialogAction === 'approve' ? '通过' : '拒绝'}成功`);
+      toast({
+        title: "成功",
+        description: `审批${dialogAction === 'approve' ? '通过' : '拒绝'}成功`,
+      });
     } catch (err) {
       console.error('审批操作失败:', err);
-      alert('审批操作失败，请重试');
+      toast({
+        title: "错误",
+        description: "审批操作失败，请重试",
+        variant: "destructive",
+      });
     }
   };
 
@@ -202,11 +215,11 @@ const ApprovalDetailPage: React.FC<{ approvalId: string }> = ({ approvalId }) =>
   // 获取操作图标
   const getActionIcon = (action: string) => {
     switch (action) {
-      case 'submit': return <PersonIcon />;
-      case 'approve': return <ApprovedIcon color="success" />;
-      case 'reject': return <RejectedIcon color="error" />;
-      case 'notify': return <CommentIcon />;
-      default: return <EventIcon />;
+      case 'submit': return <User className="h-4 w-4" />;
+      case 'approve': return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'reject': return <X className="h-4 w-4 text-red-500" />;
+      case 'notify': return <MessageSquare className="h-4 w-4" />;
+      default: return <Calendar className="h-4 w-4" />;
     }
   };
 
@@ -224,220 +237,267 @@ const ApprovalDetailPage: React.FC<{ approvalId: string }> = ({ approvalId }) =>
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
-      </Box>
+      <div className="container mx-auto p-6">
+        <div className="space-y-6">
+          <Skeleton className="h-8 w-48" />
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-3/4" />
+              <div className="flex gap-2">
+                <Skeleton className="h-6 w-16" />
+                <Skeleton className="h-6 w-16" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                <Skeleton className="h-20" />
+                <Skeleton className="h-20" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Box p={3}>
-        <Alert severity="error">{error}</Alert>
-      </Box>
+      <div className="container mx-auto p-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-red-600" />
+            <p className="text-red-800 font-medium">错误</p>
+          </div>
+          <p className="text-red-700 mt-2">{error}</p>
+        </div>
+      </div>
     );
   }
 
   if (!approval) {
     return (
-      <Box p={3}>
-        <Alert severity="info">未找到审批详情</Alert>
-      </Box>
+      <div className="container mx-auto p-6">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-blue-600" />
+            <p className="text-blue-800 font-medium">信息</p>
+          </div>
+          <p className="text-blue-700 mt-2">未找到审批详情</p>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Box sx={{ width: '100%', p: 3 }}>
-      <Typography variant="h4" component="h1" gutterBottom>
-        审批详情
-      </Typography>
+    <div className="container mx-auto p-6">
+      <div className="flex items-center gap-4 mb-6">
+        <Button variant="outline" size="icon">
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <h1 className="text-3xl font-bold">审批详情</h1>
+      </div>
       
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
-          <Box>
-            <Typography variant="h5" gutterBottom>
-              {approval.name}
-            </Typography>
-            <Box display="flex" alignItems="center" gap={1} mb={1}>
-              <Chip 
-                label={getStatusLabel(approval.status)}
-                color={getStatusColor(approval.status)}
-                size="small"
-              />
-              <Chip 
-                label={getPriorityLabel(approval.priority)}
-                color={getPriorityColor(approval.priority)}
-                size="small"
-                icon={<PriorityIcon />}
-              />
-            </Box>
-          </Box>
-          
-          {approval.status === 'pending' && (
-            <Box>
-              <Button
-                variant="contained"
-                color="success"
-                startIcon={<ApprovedIcon />}
-                onClick={() => handleApproveReject('approve')}
-                sx={{ mr: 1 }}
-              >
-                通过
-              </Button>
-              <Button
-                variant="contained"
-                color="error"
-                startIcon={<RejectedIcon />}
-                onClick={() => handleApproveReject('reject')}
-              >
-                拒绝
-              </Button>
-            </Box>
-          )}
-        </Box>
-        
-        <Divider sx={{ my: 2 }} />
-        
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
-          <Box>
-            <Box display="flex" alignItems="center" mb={2}>
-              <DocumentIcon sx={{ mr: 1, color: 'text.secondary' }} />
-              <Typography variant="subtitle2" color="textSecondary">
-                文档信息
-              </Typography>
-            </Box>
-            <Typography variant="body1" paragraph>
-              <strong>文档名称:</strong> {approval.documentName}
-            </Typography>
-          </Box>
-          
-          <Box>
-            <Box display="flex" alignItems="center" mb={2}>
-              <PersonIcon sx={{ mr: 1, color: 'text.secondary' }} />
-              <Typography variant="subtitle2" color="textSecondary">
-                人员信息
-              </Typography>
-            </Box>
-            <Typography variant="body1" paragraph>
-              <strong>申请人:</strong> {approval.requestorName}
-            </Typography>
-            <Typography variant="body1" paragraph>
-              <strong>审批人:</strong> {approval.approverName}
-            </Typography>
-          </Box>
-          
-          <Box>
-            <Box display="flex" alignItems="center" mb={2}>
-              <EventIcon sx={{ mr: 1, color: 'text.secondary' }} />
-              <Typography variant="subtitle2" color="textSecondary">
-                时间信息
-              </Typography>
-            </Box>
-            <Typography variant="body1" paragraph>
-              <strong>提交时间:</strong> {formatDate(approval.submittedAt)}
-            </Typography>
-            {approval.deadline && (
-              <Typography variant="body1" paragraph>
-                <strong>截止时间:</strong> {formatDate(approval.deadline)}
-              </Typography>
+      <Card className="mb-6">
+        <CardHeader>
+          <div className="flex justify-between items-start">
+            <div className="space-y-2">
+              <CardTitle className="text-2xl">{approval.name}</CardTitle>
+              <div className="flex items-center gap-2">
+                <Badge 
+                  variant={approval.status === 'pending' ? 'secondary' : 
+                          approval.status === 'approved' ? 'default' : 
+                          approval.status === 'rejected' ? 'destructive' : 'outline'}
+                >
+                  {getStatusLabel(approval.status)}
+                </Badge>
+                <Badge 
+                  variant={approval.priority === 'urgent' ? 'destructive' : 
+                          approval.priority === 'high' ? 'secondary' : 'outline'}
+                >
+                  <AlertTriangle className="h-3 w-3 mr-1" />
+                  {getPriorityLabel(approval.priority)}
+                </Badge>
+              </div>
+            </div>
+            
+            {approval.status === 'pending' && (
+              <div className="flex gap-2">
+                <Button
+                  className="bg-green-600 hover:bg-green-700"
+                  onClick={() => handleApproveReject('approve')}
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  通过
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => handleApproveReject('reject')}
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  拒绝
+                </Button>
+              </div>
             )}
-          </Box>
-          
-          <Box>
-            <Box display="flex" alignItems="center" mb={2}>
-              <CommentIcon sx={{ mr: 1, color: 'text.secondary' }} />
-              <Typography variant="subtitle2" color="textSecondary">
-                备注信息
-              </Typography>
-            </Box>
-            <Typography variant="body1" paragraph>
-              <strong>描述:</strong> {approval.description || '无'}
-            </Typography>
-            <Typography variant="body1" paragraph>
-              <strong>备注:</strong> {approval.comments || '无'}
-            </Typography>
-          </Box>
-        </Box>
-      </Paper>
-      
-      <Paper sx={{ p: 3 }}>
-        <Box display="flex" alignItems="center" mb={2}>
-          <HistoryIcon sx={{ mr: 1, color: 'text.secondary' }} />
-          <Typography variant="h6" component="h2">
-            审批历史
-          </Typography>
-        </Box>
+          </div>
+        </CardHeader>
         
-        {approval.history.length === 0 ? (
-          <Alert severity="info">暂无审批历史记录</Alert>
-        ) : (
-          <List>
-            {approval.history.map((record) => (
-              <ListItem key={record.id} alignItems="flex-start">
-                <ListItemIcon>
-                  <Avatar sx={{ width: 24, height: 24 }}>
-                    {getActionIcon(record.action)}
-                  </Avatar>
-                </ListItemIcon>
-                <ListItemText
-                  primary={
-                    <Box display="flex" alignItems="center">
-                      <Typography variant="subtitle2" sx={{ mr: 1 }}>
-                        {record.actorName}
-                      </Typography>
-                      <Chip 
-                        label={getActionLabel(record.action)} 
-                        size="small" 
-                        variant="outlined"
-                      />
-                    </Box>
-                  }
-                  secondary={
-                    <>
-                      <Typography variant="body2" color="textSecondary">
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <Label className="text-sm font-medium text-muted-foreground">文档信息</Label>
+                </div>
+                <p className="text-sm">
+                  <span className="font-medium">文档名称:</span> {approval.documentName}
+                </p>
+              </div>
+              
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  <Label className="text-sm font-medium text-muted-foreground">人员信息</Label>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm">
+                    <span className="font-medium">申请人:</span> {approval.requestorName}
+                  </p>
+                  <p className="text-sm">
+                    <span className="font-medium">审批人:</span> {approval.approverName}
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <Label className="text-sm font-medium text-muted-foreground">时间信息</Label>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm">
+                    <span className="font-medium">提交时间:</span> {formatDate(approval.submittedAt)}
+                  </p>
+                  {approval.deadline && (
+                    <p className="text-sm">
+                      <span className="font-medium">截止时间:</span> {formatDate(approval.deadline)}
+                    </p>
+                  )}
+                </div>
+              </div>
+              
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                  <Label className="text-sm font-medium text-muted-foreground">备注信息</Label>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm">
+                    <span className="font-medium">描述:</span> {approval.description || '无'}
+                  </p>
+                  <p className="text-sm">
+                    <span className="font-medium">备注:</span> {approval.comments || '无'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <History className="h-5 w-5 text-muted-foreground" />
+            <CardTitle>审批历史</CardTitle>
+          </div>
+        </CardHeader>
+        
+        <CardContent>
+          {approval.history.length === 0 ? (
+            <div className="text-center py-8">
+              <History className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold">暂无审批历史记录</h3>
+              <p className="text-muted-foreground">该审批尚无操作记录</p>
+            </div>
+          ) : (
+            <ScrollArea className="h-64">
+              <div className="space-y-4">
+                {approval.history.map((record, index) => (
+                  <div key={record.id} className="flex gap-4">
+                    <div className="flex flex-col items-center">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                        {getActionIcon(record.action)}
+                      </div>
+                      {index < approval.history.length - 1 && (
+                        <div className="h-8 w-px bg-border" />
+                      )}
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm font-medium">{record.actorName}</h4>
+                        <Badge variant="outline" className="text-xs">
+                          {getActionLabel(record.action)}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
                         {record.comments}
-                      </Typography>
-                      <Typography variant="caption" display="block" color="textSecondary">
+                      </p>
+                      <p className="text-xs text-muted-foreground">
                         {formatDate(record.actionTime)}
-                      </Typography>
-                    </>
-                  }
-                />
-              </ListItem>
-            ))}
-          </List>
-        )}
-      </Paper>
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          )}
+        </CardContent>
+      </Card>
       
       {/* 审批操作对话框 */}
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {dialogAction === 'approve' ? '通过审批' : '拒绝审批'}
-        </DialogTitle>
-        <DialogContent>
-          <TextField
-            label="审批意见"
-            multiline
-            rows={4}
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            fullWidth
-            margin="normal"
-            placeholder={`请输入${dialogAction === 'approve' ? '通过' : '拒绝'}意见`}
-          />
+      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {dialogAction === 'approve' ? '通过审批' : '拒绝审批'}
+            </DialogTitle>
+            <DialogDescription>
+              请输入{dialogAction === 'approve' ? '通过' : '拒绝'}意见，将作为审批记录保存。
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="comment">审批意见</Label>
+              <Textarea
+                id="comment"
+                rows={4}
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder={`请输入${dialogAction === 'approve' ? '通过' : '拒绝'}意见`}
+                className="mt-1"
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenDialog(false)}>
+              取消
+            </Button>
+            <Button 
+              className={dialogAction === 'approve' ? 'bg-green-600 hover:bg-green-700' : ''}
+              variant={dialogAction === 'approve' ? 'default' : 'destructive'}
+              onClick={handleSubmitAction}
+            >
+              {dialogAction === 'approve' ? '通过' : '拒绝'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>取消</Button>
-          <Button 
-            variant="contained" 
-            color={dialogAction === 'approve' ? 'success' : 'error'}
-            onClick={handleSubmitAction}
-          >
-            {dialogAction === 'approve' ? '通过' : '拒绝'}
-          </Button>
-        </DialogActions>
       </Dialog>
-    </Box>
+    </div>
   );
 };
 

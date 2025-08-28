@@ -158,9 +158,10 @@ type wechatConfig struct {
 
 // scheduleConfig 定时任务配置
 type scheduleConfig struct {
-	DocumentSyncCron string `mapstructure:"document_sync_cron"`
-	HealthCheckCron  string `mapstructure:"health_check_cron"`
-	ArchiveCron      string `mapstructure:"archive_cron"`
+	DocumentSyncCron     string `mapstructure:"document_sync_cron"`
+	HealthCheckCron      string `mapstructure:"health_check_cron"`
+	ArchiveCron          string `mapstructure:"archive_cron"`
+	CalendarReminderCron string `mapstructure:"calendar_reminder_cron"` // 日程提醒任务
 }
 
 // workerConfig 工作配置

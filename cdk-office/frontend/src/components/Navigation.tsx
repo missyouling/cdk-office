@@ -15,7 +15,8 @@ import {
   ListTodo,
   Settings,
   ClipboardList,
-  User
+  User,
+  Grid3X3
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -47,8 +48,10 @@ const Navigation: React.FC = () => {
   };
 
   const navigationItems = [
+    { href: '/app-center', label: '应用中心', icon: Grid3X3 },
     { href: '/employee-management', label: '员工管理', icon: Users },
     { href: '/document-management', label: '文档管理', icon: FileText },
+    { href: '/contracts', label: '电子合同', icon: ClipboardList },
     { href: '/ai-assistant', label: 'AI助手', icon: Bot },
     { href: '/approval-management', label: '审批管理', icon: CheckCircle },
     { href: '/workflow-management', label: '工作流', icon: GitBranch },
@@ -58,6 +61,7 @@ const Navigation: React.FC = () => {
 
   const mobileMenuItems = [
     ...navigationItems,
+    { href: '/survey', label: '调查问卷', icon: ClipboardList },
     { href: '/workflow-instances', label: '工作流实例', icon: ClipboardList },
     { href: '/workflow-designer', label: '工作流设计器', icon: Settings },
     { href: '/qrcode', label: '二维码应用', icon: QrCode },

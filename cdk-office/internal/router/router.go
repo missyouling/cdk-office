@@ -151,16 +151,26 @@ func Serve() {
 				tagRouter.GET("", project.ListTags)
 			}
 
-			// Dashboard
-			dashboardRouter := apiV1Router.Group("/dashboard")
+			// Dashboard (待办事项和日程)
+			dashboardService := dashboard.NewService(db.GetDB())
+			dashboardHandler := dashboard.NewHandler(dashboardService)
+			dashboardRouter := apiV1Router.Group("")
 			dashboardRouter.Use(oauth.LoginRequired())
 			{
-				dashboardRouter.GET("/stats/all", dashboard.GetAllStats)
+				dashboard.RegisterRoutes(dashboardRouter, dashboardHandler)
 			}
 
-			// AI Services (with fallback support)
-			aiRouterInstance := ai.NewRouter(db.GetDB())
-			aiRouterInstance.RegisterRoutes(apiV1Router)
+			// AI Services (智能问答和知识库同步)
+			aiRouter, err := ai.NewAIRouter(db.GetDB())
+			if err != nil {
+				log.Printf("[WARNING] Failed to initialize AI router: %v", err)
+			} else {
+				aiRouterGroup := apiV1Router.Group("")
+				aiRouterGroup.Use(oauth.LoginRequired())
+				// 应用标准API限流
+				optimizationMiddleware.ApplyRateLimiting(aiRouterGroup, "api")
+				aiRouter.RegisterRoutes(aiRouterGroup)
+			}
 
 			// OCR Services (with fallback support)
 			ocrRouterInstance := ocr.NewRouter(db.GetDB())

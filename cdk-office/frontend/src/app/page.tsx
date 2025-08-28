@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,8 +19,18 @@ import {
   HelpCircle
 } from 'lucide-react';
 import Link from 'next/link';
+import { TodoCard } from '@/components/dashboard/TodoCard';
+import { CalendarCard } from '@/components/dashboard/CalendarCard';
+import { useNotifications } from '@/hooks/useNotifications';
 
 export default function Home() {
+  // 启用通知轮询，仅获取日程提醒并自动标记已读
+  const { unreadCount } = useNotifications({
+    pollingInterval: 60000, // 每60秒轮询一次
+    limit: 20,
+    unreadOnly: true, // 只获取未读通知
+    autoMarkAsRead: true, // 自动标记已读
+  });
   const features = [
     {
       title: '员工管理',
@@ -38,7 +48,7 @@ export default function Home() {
       title: '电子合同',
       description: '强大的电子合同签署平台，支持多方签署、CA证书、区块链存证等功能',
       icon: <ClipboardList className="h-8 w-8" />,
-      link: '/contract-management',
+      link: '/contracts',
       badge: 'NEW',
       badgeVariant: 'success' as const
     },
@@ -94,11 +104,24 @@ export default function Home() {
         <h1 className="text-4xl font-bold text-gray-900 mb-4">
           CDK-Office 企业内容管理平台
         </h1>
-        <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+        <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-6">
           集成Dify AI平台，实现智能文档管理、AI问答和知识库管理功能
         </p>
+        <Button asChild size="lg" className="mb-4">
+          <Link href="/app-center">
+            <BarChart3 className="mr-2 h-5 w-5" />
+            浏览全部应用
+          </Link>
+        </Button>
       </div>
       
+      {/* 待办事项和日程卡片 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <TodoCard />
+        <CalendarCard />
+      </div>
+      
+      {/* 功能应用卡片 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
         {features.map((feature, index) => (
           <Card 

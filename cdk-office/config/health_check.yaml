@@ -1,0 +1,110 @@
+# 健康检查配置文件示例
+# config/health_check.yaml
+
+health_check:
+  # 检查间隔（分钟）
+  check_interval: 5
+  
+  # 记录保留天数
+  retention_days: 30
+  
+  # 默认超时时间（秒）
+  default_timeout: 30
+  
+  # 服务配置
+  services:
+    - name: "postgresql_database"
+      type: "database"
+      endpoint: "${DATABASE_HOST}:${DATABASE_PORT}"
+      timeout: 5
+      critical: true
+      
+    - name: "redis_cache"
+      type: "redis"
+      endpoint: "${REDIS_HOST}:${REDIS_PORT}"
+      timeout: 3
+      critical: true
+      
+    - name: "openai_service"
+      type: "ai_service"
+      endpoint: "https://api.openai.com"
+      health_path: "/v1/models"
+      timeout: 10
+      headers:
+        Authorization: "Bearer ${OPENAI_API_KEY}"
+        Content-Type: "application/json"
+      critical: false
+      
+    - name: "baidu_ocr_service"
+      type: "ocr_service"
+      endpoint: "https://aip.baidubce.com"
+      health_path: "/oauth/2.0/token"
+      timeout: 8
+      critical: false
+      
+    - name: "wechat_api"
+      type: "wechat_api"
+      endpoint: "https://api.weixin.qq.com"
+      health_path: "/cgi-bin/token"
+      timeout: 6
+      critical: true
+      
+    - name: "supabase_storage"
+      type: "storage"
+      endpoint: "${SUPABASE_URL}"
+      health_path: "/storage/v1/bucket"
+      timeout: 5
+      headers:
+        Authorization: "Bearer ${SUPABASE_ANON_KEY}"
+      critical: true
+
+  # 告警配置
+  alerts:
+    # 响应时间阈值（毫秒）
+    slow_response_threshold: 500
+    
+    # 关键服务列表
+    critical_services:
+      - "postgresql_database"
+      - "redis_cache"
+      - "wechat_api"
+      - "supabase_storage"
+    
+    # 告警通道
+    channels:
+      - type: "log"
+        enabled: true
+      - type: "webhook"
+        enabled: false
+        url: "${WEBHOOK_URL}"
+      - type: "email"
+        enabled: false
+        smtp_host: "${SMTP_HOST}"
+        smtp_port: "${SMTP_PORT}"
+        username: "${SMTP_USER}"
+        password: "${SMTP_PASS}"
+        recipients:
+          - "admin@example.com"
+
+# 数据库配置
+database:
+  host: "${DATABASE_HOST:-localhost}"
+  port: "${DATABASE_PORT:-5432}"
+  user: "${DATABASE_USER:-postgres}"
+  password: "${DATABASE_PASSWORD:-password}"
+  name: "${DATABASE_NAME:-cdk_office}"
+  sslmode: "${DATABASE_SSLMODE:-disable}"
+  timezone: "Asia/Shanghai"
+
+# 日志配置
+logging:
+  level: "${LOG_LEVEL:-info}"
+  format: "${LOG_FORMAT:-json}"
+  output: "${LOG_OUTPUT:-stdout}"
+  
+# 服务器配置
+server:
+  port: "${PORT:-8080}"
+  mode: "${GIN_MODE:-debug}"
+  read_timeout: 30
+  write_timeout: 30

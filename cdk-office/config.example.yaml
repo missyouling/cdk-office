@@ -178,6 +178,7 @@ schedule:
   document_sync_cron: "0 */30 * * * *"  # 每30分钟同步一次文档
   health_check_cron: "0 0 * * * *"      # 每小时检查一次服务健康状态
   archive_cron: "0 0 2 * * *"           # 每天凌晨2点执行归档任务
+  calendar_reminder_cron: "0 */15 * * * *"  # 每15分钟检查一次日程提醒
 
 # Worker
 worker:
