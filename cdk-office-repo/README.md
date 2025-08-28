@@ -96,6 +96,16 @@ npm run dev
 cdk-office/
 ├── internal/              # 核心代码
 │   ├── apps/             # 应用模块
+│   │   ├── admin/        # 管理后台
+│   │   ├── ai/           # AI服务集成
+│   │   ├── approval/     # 审批流程管理
+│   │   ├── dashboard/    # 仪表板
+│   │   ├── health/       # 健康检查
+│   │   ├── oauth/        # OAuth认证
+│   │   ├── ocr/          # OCR服务集成
+│   │   ├── project/      # 项目管理
+│   │   ├── qrcode/       # 二维码应用
+│   │   └── schedule/     # 日程管理
 │   ├── cmd/              # 命令行接口
 │   ├── config/           # 配置管理
 │   ├── db/               # 数据库连接
@@ -113,6 +123,33 @@ cdk-office/
 ├── Makefile              # 构建脚本
 └── README.md             # 项目说明
 ```
+
+## 🔄 审批流程功能
+
+CDK-Office提供了完整的审批流程管理功能，支持文档上传、更新、删除等操作的审批流程。
+
+### 主要特性
+
+- **审批流程管理**：创建、查看、审批和拒绝审批流程
+- **审批模板**：支持自定义审批模板，简化审批流程创建
+- **多级审批**：支持多级审批流程，满足复杂业务需求
+- **审批历史**：完整记录审批历史，便于追溯和审计
+- **通知系统**：实时通知相关人员审批状态变化
+- **优先级管理**：支持设置审批优先级，确保重要审批及时处理
+
+### 审批类型
+
+1. **文档上传审批**：新文档上传时需要审批
+2. **文档更新审批**：文档更新时需要审批
+3. **文档删除审批**：文档删除时需要审批
+
+### API接口
+
+- `POST /api/v1/approval/approvals` - 创建审批流程
+- `GET /api/v1/approval/approvals` - 获取审批流程列表
+- `GET /api/v1/approval/approvals/:id` - 获取审批流程详情
+- `PUT /api/v1/approval/approvals/:id/status` - 更新审批状态
+- `GET /api/v1/approval/approvals/:id/history` - 获取审批历史
 
 ## 🐳 Docker部署
 

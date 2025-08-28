@@ -1,0 +1,557 @@
+# CDK-Office 生产环境 Docker Compose 配置
+# 优化版本 - 支持高可用、监控、安全和性能优化
+version: '3.8'
+
+# 自定义网络配置
+networks:
+  frontend:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.1.0/24
+  backend:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.2.0/24
+  monitoring:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.3.0/24
+
+# 数据卷配置
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  stirling_pdf_data:
+    driver: local
+  elasticsearch_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  logs_data:
+    driver: local
+
+# x-common-variables 通用配置模板
+x-common-variables: &common-variables
+  TZ: Asia/Shanghai
+  
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-restart-policy: &restart-policy
+  restart_policy:
+    condition: unless-stopped
+    delay: 10s
+    max_attempts: 3
+    window: 120s
+
+services:
+  # ===========================================
+  # 应用层服务
+  # ===========================================
+  
+  # CDK-Office 主应用服务
+  cdk-office:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - VERSION=${VERSION:-latest}
+        - COMMIT_SHA=${COMMIT_SHA:-unknown}
+        - BUILD_TIME=${BUILD_TIME:-$(date -u +"%Y-%m-%dT%H:%M:%SZ")}
+    container_name: cdk-office-app
+    hostname: cdk-office-app
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    environment:
+      <<: *common-variables
+      # 应用配置
+      APP_ENV: production
+      GIN_MODE: release
+      APP_DEBUG: "false"
+      
+      # 数据库配置
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-cdk_office}
+      DB_PASSWORD: ${DB_PASSWORD:-SecurePassword123!}
+      DB_NAME: ${DB_NAME:-cdk_office}
+      DB_SSL_MODE: disable
+      
+      # Redis配置
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-RedisSecure123!}
+      REDIS_DB: 0
+      
+      # 第三方服务
+      STIRLING_PDF_URL: http://stirling-pdf:8080
+      KKFILEVIEW_URL: http://kkfileview:8012
+      
+      # 文件存储
+      UPLOAD_PATH: /app/uploads
+      PDF_RESULTS_PATH: /app/pdf_results
+      CACHE_PATH: /app/cache
+      
+      # 性能优化
+      MAX_UPLOAD_SIZE: 100MB
+      DB_MAX_OPEN_CONNS: 25
+      DB_MAX_IDLE_CONNS: 10
+      REDIS_POOL_SIZE: 10
+      
+      # 监控配置
+      METRICS_ENABLED: "true"
+      HEALTH_CHECK_ENABLED: "true"
+    volumes:
+      - logs_data:/app/logs
+      - ./uploads:/app/uploads
+      - ./pdf_results:/app/pdf_results
+      - ./cache:/app/cache
+      - /etc/localtime:/etc/localtime:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      stirling-pdf:
+        condition: service_healthy
+    networks:
+      - frontend
+      - backend
+    logging: *default-logging
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ===========================================
+  # 数据库服务
+  # ===========================================
+  
+  # PostgreSQL 主数据库
+  postgres:
+    image: postgres:15-alpine
+    container_name: cdk-office-postgres
+    hostname: postgres
+    environment:
+      <<: *common-variables
+      POSTGRES_DB: ${DB_NAME:-cdk_office}
+      POSTGRES_USER: ${DB_USER:-cdk_office}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-SecurePassword123!}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C"
+      # 性能优化配置
+      POSTGRES_SHARED_BUFFERS: 256MB
+      POSTGRES_EFFECTIVE_CACHE_SIZE: 1GB
+      POSTGRES_MAINTENANCE_WORK_MEM: 64MB
+      POSTGRES_CHECKPOINT_COMPLETION_TARGET: 0.9
+      POSTGRES_WAL_BUFFERS: 16MB
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./scripts/postgres-tuning.sql:/docker-entrypoint-initdb.d/02-tuning.sql
+      - ./backup:/backup
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    networks:
+      - backend
+    logging: *default-logging
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-cdk_office} -d ${DB_NAME:-cdk_office}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Redis 缓存和会话存储
+  redis:
+    image: redis:7-alpine
+    container_name: cdk-office-redis
+    hostname: redis
+    command: |
+      redis-server
+      --requirepass ${REDIS_PASSWORD:-RedisSecure123!}
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --tcp-keepalive 60
+      --timeout 300
+      --databases 16
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+      --rdbcompression yes
+      --rdbchecksum yes
+    environment:
+      <<: *common-variables
+    volumes:
+      - redis_data:/data
+      - ./redis/redis.conf:/etc/redis/redis.conf
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    networks:
+      - backend
+    logging: *default-logging
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ===========================================
+  # 文档处理服务
+  # ===========================================
+  
+  # Stirling PDF 处理服务
+  stirling-pdf:
+    image: stirlingtools/stirling-pdf:latest
+    container_name: cdk-office-stirling-pdf
+    hostname: stirling-pdf
+    environment:
+      <<: *common-variables
+      # 安全配置
+      DOCKER_ENABLE_SECURITY: "false"
+      SECURITY_ENABLELOGIN: "false"
+      
+      # 功能配置
+      INSTALL_BOOK_AND_ADVANCED_HTML_OPS: "true"
+      LANGS: "en_US,zh_CN"
+      
+      # UI配置
+      UI_APP_NAME: "CDK-Office PDF Tools"
+      UI_HOME_DESCRIPTION: "Professional PDF processing for CDK-Office"
+      UI_APP_NAVBAR_NAME: "PDF Tools"
+      
+      # 性能配置
+      SYSTEM_MAXFILESIZE: "200MB"
+      SYSTEM_MAXREQUESTS: "100"
+      SYSTEM_ROOTURI: "/"
+      
+      # 监控配置
+      METRICS_ENABLED: "true"
+      
+      # Java优化
+      JAVA_TOOL_OPTIONS: "-Xmx1g -Xms512m -XX:+UseG1GC -XX:G1HeapRegionSize=16m"
+    volumes:
+      - stirling_pdf_data:/usr/share/tessdata
+      - ./stirling-pdf/configs:/configs
+      - ./stirling-pdf/logs:/logs
+      - ./stirling-pdf/customFiles:/customFiles
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "${STIRLING_PDF_PORT:-8081}:8080"
+    networks:
+      - backend
+    logging: *default-logging
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 1.5G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/info"]
+      interval: 60s
+      timeout: 30s
+      retries: 3
+      start_period: 120s
+
+  # KKFileView 文件预览服务
+  kkfileview:
+    image: keking/kkfileview:latest
+    container_name: cdk-office-kkfileview
+    hostname: kkfileview
+    environment:
+      <<: *common-variables
+      # 服务配置
+      SERVER_PORT: 8012
+      FILE_UPLOAD_ENABLED: "true"
+      FILE_UPLOAD_SIZE_MAX: 104857600  # 100MB
+      
+      # 缓存配置
+      CACHE_TYPE: redis
+      CACHE_REDIS_HOST: redis
+      CACHE_REDIS_PORT: 6379
+      CACHE_REDIS_PASSWORD: ${REDIS_PASSWORD:-RedisSecure123!}
+      
+      # 性能配置
+      KK_OFFICE_PREVIEW_TYPE: image
+      KK_IMG_PREVIEW_TYPE: pdf
+      KK_SIMTEXT_TYPE: txt,html,xml,properties
+      
+      # 转换配置
+      OFFICE_PREVIEW_SWITCH_DISABLED: "false"
+      PDF_PREVIEW_SWITCH_DISABLED: "false"
+    volumes:
+      - ./kkfileview/files:/opt/kkFileView/files
+      - ./kkfileview/logs:/opt/kkFileView/logs
+      - ./kkfileview/config:/opt/kkFileView/config
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "${KKFILEVIEW_PORT:-8012}:8012"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - backend
+    logging: *default-logging
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8012/"]
+      interval: 60s
+      timeout: 30s
+      retries: 3
+      start_period: 120s
+
+  # ===========================================
+  # 代理和负载均衡
+  # ===========================================
+  
+  # Nginx 反向代理
+  nginx:
+    image: nginx:alpine
+    container_name: cdk-office-nginx
+    hostname: nginx
+    environment:
+      <<: *common-variables
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./static:/usr/share/nginx/html/static:ro
+      - ./nginx/logs:/var/log/nginx
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    depends_on:
+      - cdk-office
+    networks:
+      - frontend
+    logging: *default-logging
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ===========================================
+  # 监控和日志服务
+  # ===========================================
+  
+  # Prometheus 监控
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: cdk-office-prometheus
+    hostname: prometheus
+    environment:
+      <<: *common-variables
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/rules:/etc/prometheus/rules:ro
+      - prometheus_data:/prometheus
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+      - '--storage.tsdb.retention.size=10GB'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    networks:
+      - monitoring
+      - backend
+    logging: *default-logging
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Grafana 仪表板
+  grafana:
+    image: grafana/grafana:latest
+    container_name: cdk-office-grafana
+    hostname: grafana
+    environment:
+      <<: *common-variables
+      # 安全配置
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-GrafanaSecure123!}
+      GF_SECURITY_SECRET_KEY: ${GRAFANA_SECRET_KEY:-grafana_secret_key_2024}
+      
+      # 服务配置
+      GF_SERVER_ROOT_URL: http://localhost:3000
+      GF_SERVER_SERVE_FROM_SUB_PATH: "false"
+      
+      # 数据库配置
+      GF_DATABASE_TYPE: postgres
+      GF_DATABASE_HOST: postgres:5432
+      GF_DATABASE_NAME: grafana
+      GF_DATABASE_USER: ${DB_USER:-cdk_office}
+      GF_DATABASE_PASSWORD: ${DB_PASSWORD:-SecurePassword123!}
+      
+      # 性能配置
+      GF_ALERTING_ENABLED: "true"
+      GF_METRICS_ENABLED: "true"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      prometheus:
+        condition: service_healthy
+    networks:
+      - monitoring
+      - backend
+    logging: *default-logging
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ElasticSearch 日志存储
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: cdk-office-elasticsearch
+    hostname: elasticsearch
+    environment:
+      <<: *common-variables
+      # 集群配置
+      node.name: cdk-office-es
+      cluster.name: cdk-office-cluster
+      discovery.type: single-node
+      
+      # 内存配置
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+      
+      # 安全配置
+      xpack.security.enabled: "false"
+      xpack.security.http.ssl.enabled: "false"
+      xpack.security.transport.ssl.enabled: "false"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+      - ./elasticsearch/config:/usr/share/elasticsearch/config:ro
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "${ELASTICSEARCH_PORT:-9200}:9200"
+    networks:
+      - monitoring
+    logging: *default-logging
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200/_cluster/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+
+# 默认启动的服务（可通过 profiles 选择性启动）
+profiles:
+  - name: "core"
+    services: ["cdk-office", "postgres", "redis", "stirling-pdf"]
+  - name: "full"
+    services: ["cdk-office", "postgres", "redis", "stirling-pdf", "kkfileview", "nginx"]
+  - name: "monitoring"
+    services: ["prometheus", "grafana", "elasticsearch"]

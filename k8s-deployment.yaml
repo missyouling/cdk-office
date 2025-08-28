@@ -1,0 +1,706 @@
+# CDK-Office Kubernetes 部署配置
+# 支持云原生环境部署，包含高可用、自动扩缩容和监控
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cdk-office
+  labels:
+    name: cdk-office
+---
+# ConfigMap 配置
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cdk-office-config
+  namespace: cdk-office
+data:
+  APP_ENV: "production"
+  GIN_MODE: "release"
+  DB_HOST: "postgres-service"
+  DB_PORT: "5432"
+  DB_NAME: "cdk_office"
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  STIRLING_PDF_URL: "http://stirling-pdf-service:8080"
+  KKFILEVIEW_URL: "http://kkfileview-service:8012"
+---
+# Secret 敏感信息
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cdk-office-secrets
+  namespace: cdk-office
+type: Opaque
+data:
+  # Base64编码的密码，实际部署时需要替换
+  DB_PASSWORD: U2VjdXJlUGFzc3dvcmQxMjMh  # SecurePassword123!
+  REDIS_PASSWORD: UmVkaXNTZWN1cmUxMjMh      # RedisSecure123!
+  GRAFANA_PASSWORD: R3JhZmFuYVNlY3VyZTEyMyE= # GrafanaSecure123!
+---
+# PostgreSQL 部署
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: cdk-office
+  labels:
+    app: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: cdk-office-config
+              key: DB_NAME
+        - name: POSTGRES_USER
+          value: "cdk_office"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: cdk-office-secrets
+              key: DB_PASSWORD
+        - name: PGDATA
+          value: "/var/lib/postgresql/data/pgdata"
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - cdk_office
+            - -d
+            - cdk_office
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - cdk_office
+            - -d
+            - cdk_office
+          initialDelaySeconds: 10
+          periodSeconds: 10
+      volumes:
+      - name: postgres-data
+        persistentVolumeClaim:
+          claimName: postgres-pvc
+---
+# PostgreSQL PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: cdk-office
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard  # 根据云提供商调整
+---
+# PostgreSQL Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: cdk-office
+spec:
+  selector:
+    app: postgres
+  ports:
+  - port: 5432
+    targetPort: 5432
+  type: ClusterIP
+---
+# Redis 部署
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: cdk-office
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+        command:
+        - redis-server
+        - --requirepass
+        - $(REDIS_PASSWORD)
+        - --maxmemory
+        - 512mb
+        - --maxmemory-policy
+        - allkeys-lru
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: cdk-office-secrets
+              key: REDIS_PASSWORD
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 10
+          periodSeconds: 10
+      volumes:
+      - name: redis-data
+        persistentVolumeClaim:
+          claimName: redis-pvc
+---
+# Redis PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+  namespace: cdk-office
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  storageClassName: standard
+---
+# Redis Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: cdk-office
+spec:
+  selector:
+    app: redis
+  ports:
+  - port: 6379
+    targetPort: 6379
+  type: ClusterIP
+---
+# Stirling PDF 部署
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stirling-pdf
+  namespace: cdk-office
+  labels:
+    app: stirling-pdf
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: stirling-pdf
+  template:
+    metadata:
+      labels:
+        app: stirling-pdf
+    spec:
+      containers:
+      - name: stirling-pdf
+        image: stirlingtools/stirling-pdf:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: DOCKER_ENABLE_SECURITY
+          value: "false"
+        - name: LANGS
+          value: "en_US,zh_CN"
+        - name: UI_APP_NAME
+          value: "CDK-Office PDF Tools"
+        - name: SYSTEM_MAXFILESIZE
+          value: "200MB"
+        - name: METRICS_ENABLED
+          value: "true"
+        - name: JAVA_TOOL_OPTIONS
+          value: "-Xmx1g -Xms512m -XX:+UseG1GC"
+        volumeMounts:
+        - name: stirling-pdf-data
+          mountPath: /usr/share/tessdata
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1.5Gi"
+            cpu: "1500m"
+        livenessProbe:
+          httpGet:
+            path: /api/v1/info
+            port: 8080
+          initialDelaySeconds: 120
+          periodSeconds: 60
+        readinessProbe:
+          httpGet:
+            path: /api/v1/info
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+      volumes:
+      - name: stirling-pdf-data
+        persistentVolumeClaim:
+          claimName: stirling-pdf-pvc
+---
+# Stirling PDF PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: stirling-pdf-pvc
+  namespace: cdk-office
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  storageClassName: standard
+---
+# Stirling PDF Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: stirling-pdf-service
+  namespace: cdk-office
+spec:
+  selector:
+    app: stirling-pdf
+  ports:
+  - port: 8080
+    targetPort: 8080
+  type: ClusterIP
+---
+# KKFileView 部署
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kkfileview
+  namespace: cdk-office
+  labels:
+    app: kkfileview
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kkfileview
+  template:
+    metadata:
+      labels:
+        app: kkfileview
+    spec:
+      containers:
+      - name: kkfileview
+        image: keking/kkfileview:latest
+        ports:
+        - containerPort: 8012
+        env:
+        - name: SERVER_PORT
+          value: "8012"
+        - name: FILE_UPLOAD_ENABLED
+          value: "true"
+        - name: FILE_UPLOAD_SIZE_MAX
+          value: "104857600"
+        - name: CACHE_TYPE
+          value: "redis"
+        - name: CACHE_REDIS_HOST
+          value: "redis-service"
+        - name: CACHE_REDIS_PORT
+          value: "6379"
+        volumeMounts:
+        - name: kkfileview-data
+          mountPath: /opt/kkFileView/files
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8012
+          initialDelaySeconds: 120
+          periodSeconds: 60
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8012
+          initialDelaySeconds: 60
+          periodSeconds: 30
+      volumes:
+      - name: kkfileview-data
+        persistentVolumeClaim:
+          claimName: kkfileview-pvc
+---
+# KKFileView PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: kkfileview-pvc
+  namespace: cdk-office
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: standard
+---
+# KKFileView Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: kkfileview-service
+  namespace: cdk-office
+spec:
+  selector:
+    app: kkfileview
+  ports:
+  - port: 8012
+    targetPort: 8012
+  type: ClusterIP
+---
+# CDK-Office 主应用部署
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cdk-office-app
+  namespace: cdk-office
+  labels:
+    app: cdk-office-app
+spec:
+  replicas: 2  # 可根据需要调整
+  selector:
+    matchLabels:
+      app: cdk-office-app
+  template:
+    metadata:
+      labels:
+        app: cdk-office-app
+    spec:
+      containers:
+      - name: cdk-office
+        image: cdk-office:latest  # 替换为实际镜像地址
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - configMapRef:
+            name: cdk-office-config
+        env:
+        - name: DB_USER
+          value: "cdk_office"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: cdk-office-secrets
+              key: DB_PASSWORD
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: cdk-office-secrets
+              key: REDIS_PASSWORD
+        volumeMounts:
+        - name: app-uploads
+          mountPath: /app/uploads
+        - name: app-pdf-results
+          mountPath: /app/pdf_results
+        - name: app-cache
+          mountPath: /app/cache
+        - name: app-logs
+          mountPath: /app/logs
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /api/v1/health
+            port: 8000
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /api/v1/health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+      volumes:
+      - name: app-uploads
+        persistentVolumeClaim:
+          claimName: app-uploads-pvc
+      - name: app-pdf-results
+        persistentVolumeClaim:
+          claimName: app-pdf-results-pvc
+      - name: app-cache
+        persistentVolumeClaim:
+          claimName: app-cache-pvc
+      - name: app-logs
+        persistentVolumeClaim:
+          claimName: app-logs-pvc
+---
+# CDK-Office PVCs
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: app-uploads-pvc
+  namespace: cdk-office
+spec:
+  accessModes:
+    - ReadWriteMany  # 支持多Pod访问
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: app-pdf-results-pvc
+  namespace: cdk-office
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: app-cache-pvc
+  namespace: cdk-office
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 2Gi
+  storageClassName: standard
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: app-logs-pvc
+  namespace: cdk-office
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: standard
+---
+# CDK-Office Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: cdk-office-service
+  namespace: cdk-office
+  labels:
+    app: cdk-office-app
+spec:
+  selector:
+    app: cdk-office-app
+  ports:
+  - port: 8000
+    targetPort: 8000
+    name: http
+  type: ClusterIP
+---
+# CDK-Office Ingress (需要安装Ingress Controller)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cdk-office-ingress
+  namespace: cdk-office
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "200m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"  # 如果使用cert-manager
+spec:
+  tls:
+  - hosts:
+    - your-domain.com  # 替换为实际域名
+    secretName: cdk-office-tls
+  rules:
+  - host: your-domain.com  # 替换为实际域名
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: cdk-office-service
+            port:
+              number: 8000
+      - path: /pdf-tools
+        pathType: Prefix
+        backend:
+          service:
+            name: stirling-pdf-service
+            port:
+              number: 8080
+      - path: /preview
+        pathType: Prefix
+        backend:
+          service:
+            name: kkfileview-service
+            port:
+              number: 8012
+---
+# HPA 自动扩缩容
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: cdk-office-hpa
+  namespace: cdk-office
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: cdk-office-app
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+---
+# Service Monitor (如果使用Prometheus Operator)
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: cdk-office-monitor
+  namespace: cdk-office
+  labels:
+    app: cdk-office-app
+spec:
+  selector:
+    matchLabels:
+      app: cdk-office-app
+  endpoints:
+  - port: http
+    path: /api/v1/metrics
+    interval: 30s
+---
+# Network Policy (网络策略)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cdk-office-network-policy
+  namespace: cdk-office
+spec:
+  podSelector:
+    matchLabels:
+      app: cdk-office-app
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 8000
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: postgres
+    ports:
+    - protocol: TCP
+      port: 5432
+  - to:
+    - podSelector:
+        matchLabels:
+          app: redis
+    ports:
+    - protocol: TCP
+      port: 6379
+  - to:
+    - podSelector:
+        matchLabels:
+          app: stirling-pdf
+    ports:
+    - protocol: TCP
+      port: 8080
+  - to:
+    - podSelector:
+        matchLabels:
+          app: kkfileview
+    ports:
+    - protocol: TCP
+      port: 8012

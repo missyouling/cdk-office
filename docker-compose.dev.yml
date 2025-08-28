@@ -1,0 +1,71 @@
+# Docker Compose configuration for development environment
+version: '3.8'
+
+services:
+  # PostgreSQL数据库
+  postgres:
+    image: postgres:15-alpine
+    container_name: cdk-office-dev-postgres
+    environment:
+      - POSTGRES_DB=cdk_office_dev
+      - POSTGRES_USER=cdk_office
+      - POSTGRES_PASSWORD=dev_password
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    restart: unless-stopped
+
+  # Redis缓存
+  redis:
+    image: redis:7-alpine
+    container_name: cdk-office-dev-redis
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_dev_data:/data
+    ports:
+      - "6380:6379"
+    restart: unless-stopped
+
+  # Stirling PDF处理服务
+  stirling-pdf:
+    image: stirlingtools/stirling-pdf:latest
+    container_name: cdk-office-dev-stirling-pdf
+    ports:
+      - "8081:8080"
+    environment:
+      - DOCKER_ENABLE_SECURITY=false
+      - INSTALL_BOOK_AND_ADVANCED_HTML_OPS=false
+      - LANGS=en_US,zh_CN
+      - UI_APP_NAME=CDK-Office PDF Tools (Dev)
+      - SYSTEM_MAXFILESIZE=50MB
+    volumes:
+      - ./dev/stirling-pdf/configs:/configs
+      - ./dev/stirling-pdf/logs:/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/info"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # KKFileView文件预览服务（可选，开发时按需启用）
+  kkfileview:
+    image: keking/kkfileview:latest
+    container_name: cdk-office-dev-kkfileview
+    ports:
+      - "8012:8012"
+    environment:
+      - SERVER_PORT=8012
+      - FILE_UPLOAD_ENABLED=true
+      - FILE_UPLOAD_SIZE_MAX=52428800  # 50MB
+    volumes:
+      - ./dev/kkfileview/files:/opt/kkFileView/files
+      - ./dev/kkfileview/logs:/opt/kkFileView/logs
+    restart: unless-stopped
+    profiles: ["file-preview"]
+
+volumes:
+  postgres_dev_data:
+  redis_dev_data:
