@@ -1,0 +1,92 @@
+<!-- pages/employee/detail.wxml -->
+<view class="container">
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading">
+    <text>加载中...</text>
+  </view>
+
+  <!-- 错误状态 -->
+  <view wx:elif="{{error}}" class="error">
+    <text>{{error}}</text>
+  </view>
+
+  <!-- 员工详情 -->
+  <view wx:else class="employee-detail">
+    <!-- 员工基本信息 -->
+    <view class="employee-header card">
+      <text class="employee-name">{{employee.realName}}</text>
+      <text class="employee-position">{{employee.position}}</text>
+      <text class="employee-department">{{employee.department}}</text>
+      <text class="employee-status {{employee.status === '在职' ? 'active' : 'inactive'}}">{{employee.status}}</text>
+    </view>
+
+    <!-- 详细信息 -->
+    <view class="detail-section card">
+      <view class="section-title">基本信息</view>
+      <view class="detail-item">
+        <text class="label">员工ID:</text>
+        <text class="value">{{employee.id}}</text>
+      </view>
+      <view class="detail-item">
+        <text class="label">用户名:</text>
+        <text class="value">{{employee.username}}</text>
+      </view>
+      <view class="detail-item">
+        <text class="label">邮箱:</text>
+        <text class="value">{{employee.email}}</text>
+      </view>
+      <view class="detail-item">
+        <text class="label">手机号:</text>
+        <text class="value">{{employee.phone}}</text>
+      </view>
+      <view class="detail-item">
+        <text class="label">身份证号:</text>
+        <text class="value">{{employee.idCard}}</text>
+      </view>
+    </view>
+
+    <!-- 工作信息 -->
+    <view class="detail-section card">
+      <view class="section-title">工作信息</view>
+      <view class="detail-item">
+        <text class="label">部门:</text>
+        <text class="value">{{employee.department}}</text>
+      </view>
+      <view class="detail-item">
+        <text class="label">职位:</text>
+        <text class="value">{{employee.position}}</text>
+      </view>
+      <view class="detail-item">
+        <text class="label">入职日期:</text>
+        <text class="value">{{employee.hireDate}}</text>
+      </view>
+      <view class="detail-item">
+        <text class="label">状态:</text>
+        <text class="value">{{employee.status}}</text>
+      </view>
+    </view>
+
+    <!-- 联系信息 -->
+    <view class="detail-section card">
+      <view class="section-title">联系信息</view>
+      <view class="detail-item">
+        <text class="label">地址:</text>
+        <text class="value">{{employee.address}}</text>
+      </view>
+      <view class="detail-item">
+        <text class="label">紧急联系人:</text>
+        <text class="value">{{employee.emergencyContact}}</text>
+      </view>
+      <view class="detail-item">
+        <text class="label">紧急联系电话:</text>
+        <text class="value">{{employee.emergencyPhone}}</text>
+      </view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="action-buttons">
+      <button class="action-btn primary" bindtap="editEmployee">编辑信息</button>
+      <button class="action-btn danger" bindtap="terminateEmployee">办理离职</button>
+    </view>
+  </view>
+</view>

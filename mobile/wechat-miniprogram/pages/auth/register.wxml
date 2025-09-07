@@ -1,0 +1,40 @@
+<!-- pages/auth/register.wxml -->
+<view class="container">
+  <view class="register-container">
+    <view class="register-header">
+      <image class="logo" src="../../images/logo.png"></image>
+      <text class="title">CDK-Office 注册</text>
+    </view>
+    
+    <view class="register-form">
+      <view class="input-group">
+        <input class="input" placeholder="请输入用户名" bindinput="onUsernameInput" value="{{username}}" />
+      </view>
+      
+      <view class="input-group">
+        <input class="input" placeholder="请输入邮箱" bindinput="onEmailInput" value="{{email}}" />
+      </view>
+      
+      <view class="input-group">
+        <input class="input" placeholder="请输入手机号（可选）" bindinput="onPhoneInput" value="{{phone}}" />
+      </view>
+      
+      <view class="input-group">
+        <input class="input" placeholder="请输入密码（至少6位）" password bindinput="onPasswordInput" value="{{password}}" />
+      </view>
+      
+      <view class="input-group">
+        <input class="input" placeholder="请再次输入密码" password bindinput="onConfirmPasswordInput" value="{{confirmPassword}}" />
+      </view>
+      
+      <button class="register-btn" bindtap="onRegister" disabled="{{isRegistering}}">
+        {{isRegistering ? '注册中...' : '注册'}}
+      </button>
+      
+      <view class="login-link">
+        <text>已有账号？</text>
+        <text class="link" bindtap="goToLogin">立即登录</text>
+      </view>
+    </view>
+  </view>
+</view>

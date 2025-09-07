@@ -1,0 +1,41 @@
+<!-- pages/index/index.wxml -->
+<view class="container">
+  <!-- 顶部导航 -->
+  <view class="header">
+    <text class="header-title">CDK-Office</text>
+  </view>
+  
+  <!-- 用户信息区域 -->
+  <view class="user-section card">
+    <view wx:if="{{hasUserInfo}}" class="user-info">
+      <image class="user-avatar" src="{{userInfo.avatarUrl || '../../images/default_avatar.png'}}"></image>
+      <view class="user-details">
+        <text class="user-name">{{userInfo.realName || userInfo.username}}</text>
+        <text class="user-role">{{userInfo.role}}</text>
+      </view>
+      <button class="logout-btn" bindtap="logout">退出</button>
+    </view>
+    
+    <view wx:else class="login-prompt">
+      <text>请登录以使用完整功能</text>
+      <button class="login-btn" bindtap="goToLogin">立即登录</button>
+    </view>
+  </view>
+  
+  <!-- 功能模块区域 -->
+  <view class="modules-section">
+    <text class="section-title">功能模块</text>
+    <view class="module-grid">
+      <view wx:for="{{modules}}" wx:key="id" class="module-item card" bindtap="goToModule" data-id="{{item.id}}">
+        <image class="module-icon" src="{{item.icon}}"></image>
+        <text class="module-name">{{item.name}}</text>
+        <text class="module-desc">{{item.description}}</text>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 底部信息 -->
+  <view class="footer">
+    <text class="footer-text">CDK-Office 企业内容管理平台</text>
+  </view>
+</view>

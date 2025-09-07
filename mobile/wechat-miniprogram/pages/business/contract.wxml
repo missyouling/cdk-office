@@ -1,0 +1,43 @@
+<!-- pages/business/contract.wxml -->
+<view class="container">
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <input class="search-input" placeholder="搜索合同" bindinput="onSearchInput" value="{{searchKeyword}}" />
+    <button class="search-btn" bindtap="onSearch">搜索</button>
+  </view>
+  
+  <!-- 创建合同按钮 -->
+  <view class="create-btn-container">
+    <button class="create-btn primary" bindtap="createContract">创建新合同</button>
+  </view>
+  
+  <!-- 合同列表 -->
+  <view class="contract-list">
+    <view wx:for="{{contracts}}" wx:key="id" class="contract-item card" bindtap="goToContractDetail" data-id="{{item.id}}">
+      <view class="contract-header">
+        <text class="contract-title">{{item.title}}</text>
+        <text class="contract-status {{item.status === '已签署' ? 'signed' : 'pending'}}">{{item.status}}</text>
+      </view>
+      <view class="contract-parties">
+        <text class="party">甲方: {{item.partyA}}</text>
+        <text class="party">乙方: {{item.partyB}}</text>
+      </view>
+      <view class="contract-meta">
+        <text class="contract-date">创建时间: {{item.createdAt}}</text>
+      </view>
+    </view>
+    
+    <!-- 加载更多提示 -->
+    <view wx:if="{{loading}}" class="loading">
+      <text>加载中...</text>
+    </view>
+    
+    <view wx:elif="{{!hasMore && contracts.length > 0}}" class="no-more">
+      <text>没有更多数据了</text>
+    </view>
+    
+    <view wx:elif="{{contracts.length === 0 && !loading}}" class="empty">
+      <text>暂无合同</text>
+    </view>
+  </view>
+</view>

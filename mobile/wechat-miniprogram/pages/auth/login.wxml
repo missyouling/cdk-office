@@ -1,0 +1,37 @@
+<!-- pages/auth/login.wxml -->
+<view class="container">
+  <view class="login-container">
+    <view class="login-header">
+      <image class="logo" src="../../images/logo.png"></image>
+      <text class="title">CDK-Office 登录</text>
+    </view>
+    
+    <view class="login-form">
+      <view class="input-group">
+        <input class="input" placeholder="请输入用户名" bindinput="onUsernameInput" value="{{username}}" />
+      </view>
+      
+      <view class="input-group">
+        <input class="input" placeholder="请输入密码" password bindinput="onPasswordInput" value="{{password}}" />
+      </view>
+      
+      <button class="login-btn" bindtap="onLogin" disabled="{{isLoggingIn}}">
+        {{isLoggingIn ? '登录中...' : '登录'}}
+      </button>
+      
+      <view class="divider">
+        <text class="divider-text">或</text>
+      </view>
+      
+      <button class="wechat-login-btn" bindtap="onWechatLogin" disabled="{{isLoggingIn}}">
+        <image class="wechat-icon" src="../../images/wechat_icon.png"></image>
+        微信登录
+      </button>
+      
+      <view class="register-link">
+        <text>还没有账号？</text>
+        <text class="link" bindtap="goToRegister">立即注册</text>
+      </view>
+    </view>
+  </view>
+</view>

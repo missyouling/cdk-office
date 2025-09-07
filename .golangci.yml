@@ -1,0 +1,156 @@
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  enable:
+    - gofmt
+    - golint
+    - govet
+    - errcheck
+    - staticcheck
+    - unused
+    - gosimple
+    - structcheck
+    - varcheck
+    - ineffassign
+    - deadcode
+    - typecheck
+    - goimports
+    - gocyclo
+    - gocognit
+    - goconst
+    - gomnd
+    - misspell
+    - lll
+    - unparam
+    - dogsled
+    - dupl
+    - gochecknoinits
+    - gochecknoglobals
+    - gocritic
+    - revive
+    - stylecheck
+    - unconvert
+    - prealloc
+    - scopelint
+    - goprintffuncname
+    - gomodguard
+    - asciicheck
+    - bodyclose
+    - contextcheck
+    - durationcheck
+    - errorlint
+    - exhaustive
+    - exportloopref
+    - forbidigo
+    - forcetypeassert
+    - funlen
+    - goerr113
+    - gomoddirectives
+    - goprintffuncname
+    - ifshort
+    - importas
+    - maintidx
+    - makezero
+    - nakedret
+    - nestif
+    - nilerr
+    - nilnil
+    - noctx
+    - nolintlint
+    - nonamedreturns
+    - nosprintfhostport
+    - paralleltest
+    - predeclared
+    - promlinter
+    - reassign
+    - rowserrcheck
+    - sqlclosecheck
+    - tenv
+    - testableexamples
+    - testpackage
+    - thelper
+    - tparallel
+    - usestdlibvars
+    - whitespace
+    - wrapcheck
+    - wsl
+
+linters-settings:
+  gocyclo:
+    min-complexity: 15
+  gocognit:
+    min-complexity: 20
+  gomnd:
+    settings:
+      mnd:
+        checks: [argument,case,condition,operation,return,assign]
+  lll:
+    line-length: 120
+  funlen:
+    lines: 100
+    statements: 50
+  goconst:
+    min-len: 3
+    min-occurrences: 3
+  misspell:
+    locale: US
+  gomodguard:
+    blocked:
+      modules:
+        - github.com/pkg/errors
+  revive:
+    rules:
+      - name: var-naming
+        severity: warning
+        disabled: false
+      - name: indent-error-flow
+        severity: warning
+        disabled: false
+      - name: unused-parameter
+        severity: warning
+        disabled: false
+      - name: unreachable-code
+        severity: warning
+        disabled: false
+      - name: redefines-builtin-id
+        severity: warning
+        disabled: false
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+    disabled-checks:
+      - dupImport
+      - unnecessaryBlock
+  wrapcheck:
+    ignoreSigs:
+      - .Errorf(
+      - errors.New(
+      - errors.Unwrap(
+      - errors.Join(
+      - .Wrap(
+      - .Wrapf(
+      - .WithMessage(
+      - .WithMessagef(
+      - .WithStack(
+  wsl:
+    allow-assign-and-anything: false
+    allow-multiline-assign: true
+    allow-cuddle-declarations: false
+    allow-separated-leading-comment: false
+    allow-trailing-comment: false
+    force-case-trailing-whitespace: 0
+    force-err-cuddling: false
+    force-short-decl-cuddling: false
+
+issues:
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  exclude:
+    - "Error return value of .((os.)?std(out|err)..*|.*Close|.*Flush|os.Remove(All)?|.*print(f|ln)?|os.(Un)?Setenv). is not checked"

@@ -1,0 +1,62 @@
+<!-- pages/app/list.wxml -->
+<view class="container">
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <input class="search-input" placeholder="搜索应用" bindinput="onSearchInput" value="{{searchKeyword}}" />
+    <button class="search-btn" bindtap="onSearch">搜索</button>
+  </view>
+  
+  <!-- 应用列表 -->
+  <view class="app-list">
+    <view wx:for="{{apps}}" wx:key="id" class="app-item card">
+      <view class="app-header" bindtap="goToAppDetail" data-id="{{item.id}}">
+        <image class="app-icon" src="{{item.icon || '../../images/default_app_icon.png'}}" mode="aspectFit"></image>
+        <view class="app-info">
+          <text class="app-name">{{item.name}}</text>
+          <text class="app-description">{{item.description}}</text>
+        </view>
+      </view>
+      
+      <!-- 应用操作按钮 -->
+      <view class="app-actions">
+        <button 
+          wx:if="{{item.type === 'qrcode'}}" 
+          class="action-btn" 
+          bindtap="goToQRCode" 
+          data-id="{{item.id}}"
+        >
+          二维码
+        </button>
+        <button 
+          wx:if="{{item.type === 'form'}}" 
+          class="action-btn" 
+          bindtap="goToForm" 
+          data-id="{{item.id}}"
+        >
+          表单
+        </button>
+        <button 
+          wx:if="{{item.type === 'data-collection'}}" 
+          class="action-btn" 
+          bindtap="goToDataCollection" 
+          data-id="{{item.id}}"
+        >
+          数据收集
+        </button>
+      </view>
+    </view>
+    
+    <!-- 加载更多提示 -->
+    <view wx:if="{{loading}}" class="loading">
+      <text>加载中...</text>
+    </view>
+    
+    <view wx:elif="{{!hasMore && apps.length > 0}}" class="no-more">
+      <text>没有更多数据了</text>
+    </view>
+    
+    <view wx:elif="{{apps.length === 0 && !loading}}" class="empty">
+      <text>暂无应用</text>
+    </view>
+  </view>
+</view>

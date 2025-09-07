@@ -1,0 +1,41 @@
+<!-- pages/app/qrcode.wxml -->
+<view class="container">
+  <!-- 内容输入 -->
+  <view class="input-section card">
+    <view class="section-title">输入内容</view>
+    <textarea 
+      class="content-input" 
+      placeholder="请输入要生成二维码的内容，如网址、文字等" 
+      value="{{content}}" 
+      bindinput="onContentInput"
+    ></textarea>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="action-buttons">
+    <button 
+      class="generate-btn primary" 
+      bindtap="generateQRCode" 
+      disabled="{{loading}}"
+    >
+      {{loading ? '生成中...' : '生成二维码'}}
+    </button>
+  </view>
+
+  <!-- 二维码显示 -->
+  <view wx:if="{{qrCodeUrl}}" class="qrcode-section card">
+    <view class="section-title">生成的二维码</view>
+    <image class="qrcode-image" src="{{qrCodeUrl}}" mode="widthFix"></image>
+    
+    <!-- 二维码操作按钮 -->
+    <view class="qrcode-actions">
+      <button class="action-btn" bindtap="saveQRCode">保存到相册</button>
+      <button class="action-btn" bindtap="shareQRCode">分享</button>
+    </view>
+  </view>
+
+  <!-- 错误提示 -->
+  <view wx:if="{{error}}" class="error">
+    <text>{{error}}</text>
+  </view>
+</view>

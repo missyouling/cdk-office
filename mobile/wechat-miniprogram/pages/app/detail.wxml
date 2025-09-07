@@ -1,0 +1,59 @@
+<!-- pages/app/detail.wxml -->
+<view class="container">
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading">
+    <text>加载中...</text>
+  </view>
+
+  <!-- 错误状态 -->
+  <view wx:elif="{{error}}" class="error">
+    <text>{{error}}</text>
+  </view>
+
+  <!-- 应用详情 -->
+  <view wx:else class="app-detail">
+    <!-- 应用头部 -->
+    <view class="app-header card">
+      <image class="app-icon" src="{{app.icon}}" mode="aspectFit"></image>
+      <view class="app-info">
+        <text class="app-name">{{app.name}}</text>
+        <text class="app-type">{{app.type}}</text>
+        <text class="app-version">版本: {{app.version}}</text>
+      </view>
+    </view>
+
+    <!-- 应用描述 -->
+    <view class="app-description card">
+      <view class="section-title">应用描述</view>
+      <text class="description-text">{{app.description}}</text>
+    </view>
+
+    <!-- 应用信息 -->
+    <view class="app-info-section card">
+      <view class="section-title">应用信息</view>
+      <view class="detail-item">
+        <text class="label">开发者:</text>
+        <text class="value">{{app.developer}}</text>
+      </view>
+      <view class="detail-item">
+        <text class="label">创建时间:</text>
+        <text class="value">{{app.createdAt}}</text>
+      </view>
+      <view class="detail-item">
+        <text class="label">更新时间:</text>
+        <text class="value">{{app.updatedAt}}</text>
+      </view>
+      <view class="detail-item">
+        <text class="label">状态:</text>
+        <text class="value">{{app.status}}</text>
+      </view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="action-buttons">
+      <button class="action-btn primary" bindtap="useApp">使用应用</button>
+      <button class="action-btn" bindtap="editApp">编辑应用</button>
+      <button class="action-btn danger" bindtap="deleteApp">删除应用</button>
+    </view>
+  </view>
+</view>

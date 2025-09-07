@@ -1,0 +1,126 @@
+/* pages/index/index.wxss */
+.header {
+  width: 100%;
+  height: 80rpx;
+  background-color: #007aff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20rpx;
+}
+
+.header-title {
+  color: white;
+  font-size: 36rpx;
+  font-weight: bold;
+}
+
+.user-section {
+  width: 100%;
+  margin-bottom: 30rpx;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.user-avatar {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50rpx;
+  margin-right: 20rpx;
+}
+
+.user-details {
+  flex: 1;
+}
+
+.user-name {
+  display: block;
+  font-size: 32rpx;
+  font-weight: bold;
+  margin-bottom: 10rpx;
+}
+
+.user-role {
+  display: block;
+  font-size: 28rpx;
+  color: #8e8e93;
+}
+
+.logout-btn {
+  background-color: #ff3b30;
+  color: white;
+  font-size: 28rpx;
+  padding: 10rpx 20rpx;
+  border-radius: 10rpx;
+}
+
+.login-prompt {
+  text-align: center;
+  padding: 40rpx 0;
+}
+
+.login-btn {
+  background-color: #007aff;
+  color: white;
+  font-size: 32rpx;
+  margin-top: 20rpx;
+}
+
+.modules-section {
+  width: 100%;
+}
+
+.section-title {
+  display: block;
+  font-size: 32rpx;
+  font-weight: bold;
+  margin-bottom: 20rpx;
+}
+
+.module-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.module-item {
+  width: 48%;
+  text-align: center;
+  margin-bottom: 20rpx;
+  padding: 30rpx 20rpx;
+}
+
+.module-icon {
+  width: 80rpx;
+  height: 80rpx;
+  margin-bottom: 20rpx;
+}
+
+.module-name {
+  display: block;
+  font-size: 30rpx;
+  font-weight: bold;
+  margin-bottom: 10rpx;
+}
+
+.module-desc {
+  display: block;
+  font-size: 24rpx;
+  color: #8e8e93;
+}
+
+.footer {
+  width: 100%;
+  text-align: center;
+  margin-top: auto;
+  padding: 20rpx 0;
+}
+
+.footer-text {
+  font-size: 24rpx;
+  color: #8e8e93;
+}

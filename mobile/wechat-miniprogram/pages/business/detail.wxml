@@ -1,0 +1,59 @@
+<!-- pages/business/detail.wxml -->
+<view class="container">
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading">
+    <text>加载中...</text>
+  </view>
+
+  <!-- 错误状态 -->
+  <view wx:elif="{{error}}" class="error">
+    <text>{{error}}</text>
+  </view>
+
+  <!-- 模块详情 -->
+  <view wx:else class="module-detail">
+    <!-- 模块头部 -->
+    <view class="module-header card">
+      <image class="module-icon" src="{{module.icon}}" mode="aspectFit"></image>
+      <view class="module-info">
+        <text class="module-name">{{module.name}}</text>
+        <text class="module-type">{{module.type}}</text>
+        <text class="module-version">版本: {{module.version}}</text>
+      </view>
+    </view>
+
+    <!-- 模块描述 -->
+    <view class="module-description card">
+      <view class="section-title">模块描述</view>
+      <text class="description-text">{{module.description}}</text>
+    </view>
+
+    <!-- 模块信息 -->
+    <view class="module-info-section card">
+      <view class="section-title">模块信息</view>
+      <view class="detail-item">
+        <text class="label">开发者:</text>
+        <text class="value">{{module.developer}}</text>
+      </view>
+      <view class="detail-item">
+        <text class="label">创建时间:</text>
+        <text class="value">{{module.createdAt}}</text>
+      </view>
+      <view class="detail-item">
+        <text class="label">更新时间:</text>
+        <text class="value">{{module.updatedAt}}</text>
+      </view>
+      <view class="detail-item">
+        <text class="label">状态:</text>
+        <text class="value">{{module.status}}</text>
+      </view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="action-buttons">
+      <button class="action-btn primary" bindtap="useModule">使用模块</button>
+      <button class="action-btn" bindtap="editModule">编辑模块</button>
+      <button class="action-btn danger" bindtap="deleteModule">删除模块</button>
+    </view>
+  </view>
+</view>

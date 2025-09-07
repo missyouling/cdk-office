@@ -1,0 +1,83 @@
+/* pages/employee/list.wxss */
+.container {
+  padding: 20rpx;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+}
+
+.search-bar {
+  display: flex;
+  background-color: #fff;
+  border-radius: 10rpx;
+  padding: 20rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+.search-input {
+  flex: 1;
+  padding: 30rpx;
+  font-size: 28rpx;
+  border: 2rpx solid #e0e0e0;
+  border-radius: 10rpx;
+}
+
+.search-btn {
+  margin-left: 20rpx;
+  padding: 30rpx;
+  font-size: 28rpx;
+  background-color: #007aff;
+  color: #fff;
+  border-radius: 10rpx;
+  border: none;
+}
+
+.employee-list {
+  padding: 20rpx 0;
+}
+
+.employee-item {
+  display: flex;
+  align-items: center;
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+  background-color: #fff;
+  border-radius: 10rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+.employee-info {
+  flex: 1;
+}
+
+.employee-name {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  display: block;
+  margin-bottom: 10rpx;
+}
+
+.employee-position {
+  font-size: 28rpx;
+  color: #666;
+  display: block;
+  margin-bottom: 10rpx;
+}
+
+.employee-meta {
+  display: flex;
+  justify-content: space-between;
+}
+
+.employee-department, .employee-status {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.loading, .no-more, .empty {
+  text-align: center;
+  padding: 40rpx;
+  font-size: 28rpx;
+  color: #666;
+}

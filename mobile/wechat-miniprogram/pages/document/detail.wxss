@@ -1,0 +1,145 @@
+/* pages/document/detail.wxss */
+.container {
+  padding: 20rpx;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+}
+
+.loading, .error {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 600rpx;
+  font-size: 28rpx;
+  color: #666;
+}
+
+.document-header {
+  background-color: #fff;
+  border-radius: 10rpx;
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+.document-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+  display: block;
+  margin-bottom: 20rpx;
+}
+
+.document-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+}
+
+.meta-item {
+  font-size: 24rpx;
+  color: #666;
+  background-color: #f0f0f0;
+  padding: 10rpx 20rpx;
+  border-radius: 5rpx;
+}
+
+.tabs {
+  display: flex;
+  background-color: #fff;
+  border-radius: 10rpx 10rpx 0 0;
+  overflow: hidden;
+  margin-bottom: 2rpx;
+}
+
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 30rpx 0;
+  font-size: 28rpx;
+  color: #666;
+  background-color: #f8f8f8;
+}
+
+.tab.active {
+  color: #007aff;
+  background-color: #fff;
+  border-bottom: 4rpx solid #007aff;
+}
+
+.tab-content {
+  background-color: #fff;
+  border-radius: 0 0 10rpx 10rpx;
+  padding: 30rpx;
+  min-height: 400rpx;
+}
+
+.document-content {
+  font-size: 28rpx;
+  line-height: 1.6;
+  color: #333;
+  margin-bottom: 40rpx;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 20rpx;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 20rpx;
+  font-size: 28rpx;
+  border-radius: 10rpx;
+  border: 2rpx solid #007aff;
+  background-color: #fff;
+  color: #007aff;
+}
+
+.action-btn.primary {
+  background-color: #007aff;
+  color: #fff;
+}
+
+.versions-list {
+  padding: 20rpx 0;
+}
+
+.version-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30rpx 0;
+  border-bottom: 2rpx solid #eee;
+}
+
+.version-item:last-child {
+  border-bottom: none;
+}
+
+.version-info {
+  flex: 1;
+}
+
+.version-number {
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #333;
+  display: block;
+  margin-bottom: 10rpx;
+}
+
+.version-author, .version-date {
+  font-size: 24rpx;
+  color: #666;
+  display: block;
+}
+
+.view-btn {
+  padding: 10rpx 20rpx;
+  font-size: 24rpx;
+  background-color: #007aff;
+  color: #fff;
+  border-radius: 5rpx;
+  border: none;
+}

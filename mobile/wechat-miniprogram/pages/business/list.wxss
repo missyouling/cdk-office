@@ -1,0 +1,99 @@
+/* pages/business/list.wxss */
+.container {
+  padding: 20rpx;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+}
+
+.search-bar {
+  display: flex;
+  background-color: #fff;
+  border-radius: 10rpx;
+  padding: 20rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+.search-input {
+  flex: 1;
+  padding: 30rpx;
+  font-size: 28rpx;
+  border: 2rpx solid #e0e0e0;
+  border-radius: 10rpx;
+}
+
+.search-btn {
+  margin-left: 20rpx;
+  padding: 30rpx;
+  font-size: 28rpx;
+  background-color: #007aff;
+  color: #fff;
+  border-radius: 10rpx;
+  border: none;
+}
+
+.module-list {
+  padding: 20rpx 0;
+}
+
+.module-item {
+  background-color: #fff;
+  border-radius: 10rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+.module-header {
+  display: flex;
+  align-items: center;
+  padding: 30rpx;
+  border-bottom: 2rpx solid #f0f0f0;
+}
+
+.module-icon {
+  width: 100rpx;
+  height: 100rpx;
+  margin-right: 20rpx;
+  border-radius: 10rpx;
+}
+
+.module-info {
+  flex: 1;
+}
+
+.module-name {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  display: block;
+  margin-bottom: 10rpx;
+}
+
+.module-description {
+  font-size: 28rpx;
+  color: #666;
+  display: block;
+}
+
+.module-actions {
+  display: flex;
+  padding: 20rpx 30rpx;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 20rpx;
+  font-size: 28rpx;
+  border-radius: 10rpx;
+  border: 2rpx solid #007aff;
+  background-color: #fff;
+  color: #007aff;
+  margin: 0 10rpx;
+}
+
+.loading, .no-more, .empty {
+  text-align: center;
+  padding: 40rpx;
+  font-size: 28rpx;
+  color: #666;
+}

@@ -1,0 +1,139 @@
+/* pages/business/detail.wxss */
+.container {
+  padding: 20rpx;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+}
+
+.loading, .error {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 600rpx;
+  font-size: 28rpx;
+  color: #666;
+}
+
+.module-header {
+  display: flex;
+  align-items: center;
+  padding: 40rpx;
+  margin-bottom: 20rpx;
+  background-color: #fff;
+  border-radius: 10rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+.module-icon {
+  width: 120rpx;
+  height: 120rpx;
+  margin-right: 30rpx;
+  border-radius: 10rpx;
+}
+
+.module-info {
+  flex: 1;
+}
+
+.module-name {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+  display: block;
+  margin-bottom: 10rpx;
+}
+
+.module-type {
+  font-size: 28rpx;
+  color: #666;
+  display: block;
+  margin-bottom: 10rpx;
+  background-color: #f0f0f0;
+  padding: 5rpx 15rpx;
+  border-radius: 5rpx;
+  width: fit-content;
+}
+
+.module-version {
+  font-size: 28rpx;
+  color: #666;
+  display: block;
+}
+
+.module-description {
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+  background-color: #fff;
+  border-radius: 10rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+.section-title {
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 30rpx;
+  padding-bottom: 20rpx;
+  border-bottom: 2rpx solid #f0f0f0;
+}
+
+.description-text {
+  font-size: 28rpx;
+  line-height: 1.6;
+  color: #333;
+}
+
+.module-info-section {
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+  background-color: #fff;
+  border-radius: 10rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+.detail-item {
+  display: flex;
+  margin-bottom: 20rpx;
+}
+
+.detail-item:last-child {
+  margin-bottom: 0;
+}
+
+.label {
+  width: 180rpx;
+  font-size: 28rpx;
+  color: #666;
+}
+
+.value {
+  flex: 1;
+  font-size: 28rpx;
+  color: #333;
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+  margin-top: 40rpx;
+}
+
+.action-btn {
+  padding: 30rpx;
+  font-size: 28rpx;
+  border-radius: 10rpx;
+  border: 2rpx solid #007aff;
+  background-color: #fff;
+  color: #007aff;
+}
+
+.action-btn.primary {
+  background-color: #007aff;
+  color: #fff;
+}
+
+.action-btn.danger {
+  border-color: #ff3b30;
+  color: #ff3b30;
+}

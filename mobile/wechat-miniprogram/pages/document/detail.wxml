@@ -1,0 +1,75 @@
+<!-- pages/document/detail.wxml -->
+<view class="container">
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading">
+    <text>加载中...</text>
+  </view>
+
+  <!-- 错误状态 -->
+  <view wx:elif="{{error}}" class="error">
+    <text>{{error}}</text>
+  </view>
+
+  <!-- 文档详情 -->
+  <view wx:else class="document-detail">
+    <!-- 文档标题 -->
+    <view class="document-header">
+      <text class="document-title">{{document.title}}</text>
+      <view class="document-meta">
+        <text class="meta-item">分类: {{document.category}}</text>
+        <text class="meta-item">作者: {{document.author}}</text>
+        <text class="meta-item">版本: {{document.version}}</text>
+        <text class="meta-item">更新时间: {{document.updatedAt}}</text>
+      </view>
+    </view>
+
+    <!-- 标签页 -->
+    <view class="tabs">
+      <view 
+        class="tab {{activeTab === 'content' ? 'active' : ''}}" 
+        data-tab="content" 
+        bindtap="switchTab"
+      >
+        内容
+      </view>
+      <view 
+        class="tab {{activeTab === 'versions' ? 'active' : ''}}" 
+        data-tab="versions" 
+        bindtap="switchTab"
+      >
+        版本历史
+      </view>
+    </view>
+
+    <!-- 内容标签页 -->
+    <view wx:if="{{activeTab === 'content'}}" class="tab-content">
+      <view class="document-content">
+        <text>{{document.content}}</text>
+      </view>
+      
+      <!-- 操作按钮 -->
+      <view class="action-buttons">
+        <button class="action-btn primary" bindtap="downloadDocument">下载</button>
+        <button class="action-btn" bindtap="shareDocument">分享</button>
+      </view>
+    </view>
+
+    <!-- 版本历史标签页 -->
+    <view wx:if="{{activeTab === 'versions'}}" class="tab-content">
+      <view class="versions-list">
+        <view 
+          wx:for="{{versions}}" 
+          wx:key="id" 
+          class="version-item"
+        >
+          <view class="version-info">
+            <text class="version-number">版本 {{item.version}}</text>
+            <text class="version-author">作者: {{item.author}}</text>
+            <text class="version-date">日期: {{item.createdAt}}</text>
+          </view>
+          <button class="view-btn" data-id="{{item.id}}" bindtap="viewVersion">查看</button>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

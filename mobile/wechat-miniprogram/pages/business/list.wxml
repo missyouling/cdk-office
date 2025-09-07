@@ -1,0 +1,54 @@
+<!-- pages/business/list.wxml -->
+<view class="container">
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <input class="search-input" placeholder="搜索业务模块" bindinput="onSearchInput" value="{{searchKeyword}}" />
+    <button class="search-btn" bindtap="onSearch">搜索</button>
+  </view>
+  
+  <!-- 业务模块列表 -->
+  <view class="module-list">
+    <view wx:for="{{modules}}" wx:key="id" class="module-item card">
+      <view class="module-header" bindtap="goToModuleDetail" data-id="{{item.id}}">
+        <image class="module-icon" src="{{item.icon || '../../images/default_module_icon.png'}}" mode="aspectFit"></image>
+        <view class="module-info">
+          <text class="module-name">{{item.name}}</text>
+          <text class="module-description">{{item.description}}</text>
+        </view>
+      </view>
+      
+      <!-- 模块操作按钮 -->
+      <view class="module-actions">
+        <button 
+          wx:if="{{item.type === 'contract'}}" 
+          class="action-btn" 
+          bindtap="goToContract" 
+          data-id="{{item.id}}"
+        >
+          电子合同
+        </button>
+        <button 
+          wx:if="{{item.type === 'survey'}}" 
+          class="action-btn" 
+          bindtap="goToSurvey" 
+          data-id="{{item.id}}"
+        >
+          调查问卷
+        </button>
+      </view>
+    </view>
+    
+    <!-- 加载更多提示 -->
+    <view wx:if="{{loading}}" class="loading">
+      <text>加载中...</text>
+    </view>
+    
+    <view wx:elif="{{!hasMore && modules.length > 0}}" class="no-more">
+      <text>没有更多数据了</text>
+    </view>
+    
+    <view wx:elif="{{modules.length === 0 && !loading}}" class="empty">
+      <text>暂无业务模块</text>
+    </view>
+  </view>
+</view>

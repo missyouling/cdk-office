@@ -1,0 +1,68 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/auth/login",
+    "pages/auth/register",
+    "pages/document/list",
+    "pages/document/detail",
+    "pages/employee/list",
+    "pages/employee/detail",
+    "pages/app/list",
+    "pages/app/detail",
+    "pages/app/qrcode",
+    "pages/business/list",
+    "pages/business/detail",
+    "pages/business/contract"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#fff",
+    "navigationBarTitleText": "CDK-Office",
+    "navigationBarTextStyle": "black"
+  },
+  "tabBar": {
+    "color": "#7A7E83",
+    "selectedColor": "#3cc51f",
+    "borderStyle": "black",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "iconPath": "images/icon_home.png",
+        "selectedIconPath": "images/icon_home_selected.png",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/document/list",
+        "iconPath": "images/icon_document.png",
+        "selectedIconPath": "images/icon_document_selected.png",
+        "text": "文档"
+      },
+      {
+        "pagePath": "pages/employee/list",
+        "iconPath": "images/icon_employee.png",
+        "selectedIconPath": "images/icon_employee_selected.png",
+        "text": "员工"
+      },
+      {
+        "pagePath": "pages/app/list",
+        "iconPath": "images/icon_app.png",
+        "selectedIconPath": "images/icon_app_selected.png",
+        "text": "应用"
+      },
+      {
+        "pagePath": "pages/business/list",
+        "iconPath": "images/icon_business.png",
+        "selectedIconPath": "images/icon_business_selected.png",
+        "text": "业务"
+      }
+    ]
+  },
+  "networkTimeout": {
+    "request": 10000,
+    "connectSocket": 10000,
+    "uploadFile": 10000,
+    "downloadFile": 10000
+  },
+  "debug": true
+}

@@ -1,0 +1,35 @@
+<!-- pages/employee/list.wxml -->
+<view class="container">
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <input class="search-input" placeholder="搜索员工" bindinput="onSearchInput" value="{{searchKeyword}}" />
+    <button class="search-btn" bindtap="onSearch">搜索</button>
+  </view>
+  
+  <!-- 员工列表 -->
+  <view class="employee-list">
+    <view wx:for="{{employees}}" wx:key="id" class="employee-item card" bindtap="goToEmployeeDetail" data-id="{{item.id}}">
+      <view class="employee-info">
+        <text class="employee-name">{{item.realName}}</text>
+        <text class="employee-position">{{item.position}}</text>
+        <view class="employee-meta">
+          <text class="employee-department">{{item.department}}</text>
+          <text class="employee-status">{{item.status}}</text>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 加载更多提示 -->
+    <view wx:if="{{loading}}" class="loading">
+      <text>加载中...</text>
+    </view>
+    
+    <view wx:elif="{{!hasMore && employees.length > 0}}" class="no-more">
+      <text>没有更多数据了</text>
+    </view>
+    
+    <view wx:elif="{{employees.length === 0 && !loading}}" class="empty">
+      <text>暂无员工信息</text>
+    </view>
+  </view>
+</view>
