@@ -35,6 +35,19 @@ func init() {
 	warnLogger = log.New(file, "WARN: ", log.Ldate|log.Ltime|log.Lshortfile)
 }
 
+// InitTestLogger initializes the logger for testing
+func InitTestLogger() {
+	// In a real implementation, this would set up a test logger
+	// that writes to a buffer instead of files, so we can capture
+	// and verify log output in tests.
+	
+	// For now, we'll just ensure the logs directory exists
+	logDir := "logs"
+	if err := os.MkdirAll(logDir, 0755); err != nil {
+		panic("Failed to create logs directory: " + err.Error())
+	}
+}
+
 // Info logs an info message
 func Info(msg string, keysAndValues ...interface{}) {
 	_, file, line, _ := runtime.Caller(1)

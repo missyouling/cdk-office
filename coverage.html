@@ -1,0 +1,4091 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>service: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">cdk-office/internal/app/service/app_permission_service.go (0.0%)</option>
+				
+				<option value="file1">cdk-office/internal/app/service/app_service.go (33.8%)</option>
+				
+				<option value="file2">cdk-office/internal/app/service/batch_qrcode_service.go (0.0%)</option>
+				
+				<option value="file3">cdk-office/internal/app/service/data_collection_service.go (0.0%)</option>
+				
+				<option value="file4">cdk-office/internal/app/service/form_designer_service.go (0.0%)</option>
+				
+				<option value="file5">cdk-office/internal/app/service/form_service.go (0.0%)</option>
+				
+				<option value="file6">cdk-office/internal/app/service/permission_service.go (0.0%)</option>
+				
+				<option value="file7">cdk-office/internal/app/service/qrcode_service.go (0.0%)</option>
+				
+				<option value="file8">cdk-office/internal/document/service/category_service.go (0.0%)</option>
+				
+				<option value="file9">cdk-office/internal/document/service/classifier.go (0.0%)</option>
+				
+				<option value="file10">cdk-office/internal/document/service/content_extractor.go (0.0%)</option>
+				
+				<option value="file11">cdk-office/internal/document/service/document_service.go (31.2%)</option>
+				
+				<option value="file12">cdk-office/internal/document/service/knowledge_base.go (0.0%)</option>
+				
+				<option value="file13">cdk-office/internal/document/service/ocr_extractor.go (0.0%)</option>
+				
+				<option value="file14">cdk-office/internal/document/service/search_service.go (0.0%)</option>
+				
+				<option value="file15">cdk-office/internal/document/service/storage_service.go (0.0%)</option>
+				
+				<option value="file16">cdk-office/internal/document/service/summarizer.go (0.0%)</option>
+				
+				<option value="file17">cdk-office/internal/document/service/tag_extractor.go (0.0%)</option>
+				
+				<option value="file18">cdk-office/internal/document/service/version_service.go (0.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package service
+
+import (
+        "context"
+        "errors"
+        "time"
+
+        "cdk-office/internal/app/domain"
+        "cdk-office/internal/shared/database"
+        "cdk-office/internal/shared/utils"
+        "cdk-office/pkg/logger"
+        "gorm.io/gorm"
+)
+
+// AppPermissionServiceInterface defines the interface for application permission service
+type AppPermissionServiceInterface interface {
+        CreateAppPermission(ctx context.Context, req *CreateAppPermissionRequest) (*domain.AppPermission, error)
+        UpdateAppPermission(ctx context.Context, permissionID string, req *UpdateAppPermissionRequest) error
+        DeleteAppPermission(ctx context.Context, permissionID string) error
+        ListAppPermissions(ctx context.Context, appID string, page, size int) ([]*domain.AppPermission, int64, error)
+        GetAppPermission(ctx context.Context, permissionID string) (*domain.AppPermission, error)
+        AssignPermissionToUser(ctx context.Context, req *AssignPermissionToUserRequest) error
+        RevokePermissionFromUser(ctx context.Context, req *RevokePermissionFromUserRequest) error
+        ListUserPermissions(ctx context.Context, appID, userID string) ([]*domain.AppPermission, error)
+        CheckUserPermission(ctx context.Context, appID, userID, permission string) (bool, error)
+}
+
+// AppPermissionService implements the AppPermissionServiceInterface
+type AppPermissionService struct {
+        db *gorm.DB
+}
+
+// NewAppPermissionService creates a new instance of AppPermissionService
+func NewAppPermissionService() *AppPermissionService <span class="cov0" title="0">{
+        return &amp;AppPermissionService{
+                db: database.GetDB(),
+        }
+}</span>
+
+// CreateAppPermissionRequest represents the request for creating an application permission
+type CreateAppPermissionRequest struct {
+        AppID       string `json:"app_id" binding:"required"`
+        Name        string `json:"name" binding:"required"`
+        Description string `json:"description"`
+        Permission  string `json:"permission" binding:"required"` // read, write, delete, manage
+        CreatedBy   string `json:"created_by" binding:"required"`
+}
+
+// UpdateAppPermissionRequest represents the request for updating an application permission
+type UpdateAppPermissionRequest struct {
+        Name        string `json:"name"`
+        Description string `json:"description"`
+        Permission  string `json:"permission"` // read, write, delete, manage
+}
+
+// AssignPermissionToUserRequest represents the request for assigning a permission to a user
+type AssignPermissionToUserRequest struct {
+        AppID        string `json:"app_id" binding:"required"`
+        UserID       string `json:"user_id" binding:"required"`
+        PermissionID string `json:"permission_id" binding:"required"`
+        AssignedBy   string `json:"assigned_by" binding:"required"`
+}
+
+// RevokePermissionFromUserRequest represents the request for revoking a permission from a user
+type RevokePermissionFromUserRequest struct {
+        AppID        string `json:"app_id" binding:"required"`
+        UserID       string `json:"user_id" binding:"required"`
+        PermissionID string `json:"permission_id" binding:"required"`
+}
+
+
+
+// CreateAppPermission creates a new application permission
+func (s *AppPermissionService) CreateAppPermission(ctx context.Context, req *CreateAppPermissionRequest) (*domain.AppPermission, error) <span class="cov0" title="0">{
+        // Validate permission
+        validPermissions := map[string]bool{
+                "read":   true,
+                "write":  true,
+                "delete": true,
+                "manage": true,
+        }
+
+        if !validPermissions[req.Permission] </span><span class="cov0" title="0">{
+                return nil, errors.New("invalid permission")
+        }</span>
+
+        // Check if permission with the same name already exists in the app
+        <span class="cov0" title="0">var existingPermission domain.AppPermission
+        if err := s.db.Table("app_permissions").Where("app_id = ? AND name = ?", req.AppID, req.Name).First(&amp;existingPermission).Error; err == nil </span><span class="cov0" title="0">{
+                return nil, errors.New("permission with this name already exists in the application")
+        }</span>
+
+        // Create new application permission
+        <span class="cov0" title="0">permission := &amp;domain.AppPermission{
+                ID:          utils.GeneratePermissionID(),
+                AppID:       req.AppID,
+                Name:        req.Name,
+                Description: req.Description,
+                Permission:  req.Permission,
+                CreatedBy:   req.CreatedBy,
+                CreatedAt:   time.Now(),
+                UpdatedAt:   time.Now(),
+        }
+
+        // Save application permission to database
+        if err := s.db.Table("app_permissions").Create(permission).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to create application permission", "error", err)
+                return nil, errors.New("failed to create application permission")
+        }</span>
+
+        <span class="cov0" title="0">return permission, nil</span>
+}
+
+// UpdateAppPermission updates an existing application permission
+func (s *AppPermissionService) UpdateAppPermission(ctx context.Context, permissionID string, req *UpdateAppPermissionRequest) error <span class="cov0" title="0">{
+        // Find application permission by ID
+        var permission domain.AppPermission
+        if err := s.db.Table("app_permissions").Where("id = ?", permissionID).First(&amp;permission).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errors.New("application permission not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find application permission", "error", err)
+                return errors.New("failed to update application permission")</span>
+        }
+
+        // Update application permission fields
+        <span class="cov0" title="0">if req.Name != "" </span><span class="cov0" title="0">{
+                permission.Name = req.Name
+        }</span>
+
+        <span class="cov0" title="0">if req.Description != "" </span><span class="cov0" title="0">{
+                permission.Description = req.Description
+        }</span>
+
+        <span class="cov0" title="0">if req.Permission != "" </span><span class="cov0" title="0">{
+                // Validate permission
+                validPermissions := map[string]bool{
+                        "read":   true,
+                        "write":  true,
+                        "delete": true,
+                        "manage": true,
+                }
+
+                if !validPermissions[req.Permission] </span><span class="cov0" title="0">{
+                        return errors.New("invalid permission")
+                }</span>
+                <span class="cov0" title="0">permission.Permission = req.Permission</span>
+        }
+
+        <span class="cov0" title="0">permission.UpdatedAt = time.Now()
+
+        // Save updated application permission to database
+        if err := s.db.Table("app_permissions").Save(&amp;permission).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to update application permission", "error", err)
+                return errors.New("failed to update application permission")
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// DeleteAppPermission deletes an application permission
+func (s *AppPermissionService) DeleteAppPermission(ctx context.Context, permissionID string) error <span class="cov0" title="0">{
+        // Find application permission by ID
+        var permission domain.AppPermission
+        if err := s.db.Table("app_permissions").Where("id = ?", permissionID).First(&amp;permission).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errors.New("application permission not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find application permission", "error", err)
+                return errors.New("failed to delete application permission")</span>
+        }
+
+        // Delete all user permissions associated with this permission
+        <span class="cov0" title="0">if err := s.db.Table("app_user_permissions").Where("permission_id = ?", permissionID).Delete(&amp;domain.AppUserPermission{}).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to delete user permissions", "error", err)
+                return errors.New("failed to delete user permissions")
+        }</span>
+
+        // Delete application permission from database
+        <span class="cov0" title="0">if err := s.db.Table("app_permissions").Delete(&amp;permission).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to delete application permission", "error", err)
+                return errors.New("failed to delete application permission")
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// ListAppPermissions lists application permissions with pagination
+func (s *AppPermissionService) ListAppPermissions(ctx context.Context, appID string, page, size int) ([]*domain.AppPermission, int64, error) <span class="cov0" title="0">{
+        // Validate pagination parameters
+        if page &lt; 1 </span><span class="cov0" title="0">{
+                page = 1
+        }</span>
+        <span class="cov0" title="0">if size &lt; 1 || size &gt; 100 </span><span class="cov0" title="0">{
+                size = 10
+        }</span>
+
+        // Build query
+        <span class="cov0" title="0">dbQuery := s.db.Table("app_permissions").Where("app_id = ?", appID)
+
+        // Count total results
+        var total int64
+        if err := dbQuery.Count(&amp;total).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to count application permissions", "error", err)
+                return nil, 0, errors.New("failed to list application permissions")
+        }</span>
+
+        // Apply pagination
+        <span class="cov0" title="0">offset := (page - 1) * size
+        dbQuery = dbQuery.Offset(offset).Limit(size).Order("created_at desc")
+
+        // Execute query
+        var permissions []*domain.AppPermission
+        if err := dbQuery.Find(&amp;permissions).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to list application permissions", "error", err)
+                return nil, 0, errors.New("failed to list application permissions")
+        }</span>
+
+        <span class="cov0" title="0">return permissions, total, nil</span>
+}
+
+// GetAppPermission retrieves an application permission by ID
+func (s *AppPermissionService) GetAppPermission(ctx context.Context, permissionID string) (*domain.AppPermission, error) <span class="cov0" title="0">{
+        var permission domain.AppPermission
+        if err := s.db.Table("app_permissions").Where("id = ?", permissionID).First(&amp;permission).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, errors.New("application permission not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find application permission", "error", err)
+                return nil, errors.New("failed to get application permission")</span>
+        }
+
+        <span class="cov0" title="0">return &amp;permission, nil</span>
+}
+
+// AssignPermissionToUser assigns a permission to a user
+func (s *AppPermissionService) AssignPermissionToUser(ctx context.Context, req *AssignPermissionToUserRequest) error <span class="cov0" title="0">{
+        // Verify application permission exists
+        var permission domain.AppPermission
+        if err := s.db.Table("app_permissions").Where("id = ?", req.PermissionID).First(&amp;permission).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errors.New("application permission not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find application permission", "error", err)
+                return errors.New("failed to assign permission to user")</span>
+        }
+
+        // Verify permission belongs to the specified app
+        <span class="cov0" title="0">if permission.AppID != req.AppID </span><span class="cov0" title="0">{
+                return errors.New("application permission does not belong to the specified application")
+        }</span>
+
+        // Check if user already has this permission
+        <span class="cov0" title="0">var existing domain.AppUserPermission
+        if err := s.db.Table("app_user_permissions").Where("app_id = ? AND user_id = ? AND permission_id = ?", req.AppID, req.UserID, req.PermissionID).First(&amp;existing).Error; err == nil </span><span class="cov0" title="0">{
+                // User already has this permission
+                return nil
+        }</span>
+
+        // Create new user permission
+        <span class="cov0" title="0">userPermission := &amp;domain.AppUserPermission{
+                ID:           utils.GenerateUserPermissionID(),
+                AppID:        req.AppID,
+                UserID:       req.UserID,
+                PermissionID: req.PermissionID,
+                AssignedBy:   req.AssignedBy,
+                CreatedAt:    time.Now(),
+        }
+
+        // Save user permission to database
+        if err := s.db.Table("app_user_permissions").Create(userPermission).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to assign permission to user", "error", err)
+                return errors.New("failed to assign permission to user")
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// RevokePermissionFromUser revokes a permission from a user
+func (s *AppPermissionService) RevokePermissionFromUser(ctx context.Context, req *RevokePermissionFromUserRequest) error <span class="cov0" title="0">{
+        // Find user permission
+        var userPermission domain.AppUserPermission
+        if err := s.db.Table("app_user_permissions").Where("app_id = ? AND user_id = ? AND permission_id = ?", req.AppID, req.UserID, req.PermissionID).First(&amp;userPermission).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        // User doesn't have this permission
+                        return nil
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find user permission", "error", err)
+                return errors.New("failed to revoke permission from user")</span>
+        }
+
+        // Delete user permission from database
+        <span class="cov0" title="0">if err := s.db.Table("app_user_permissions").Delete(&amp;userPermission).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to revoke permission from user", "error", err)
+                return errors.New("failed to revoke permission from user")
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// ListUserPermissions lists all permissions assigned to a user for an application
+func (s *AppPermissionService) ListUserPermissions(ctx context.Context, appID, userID string) ([]*domain.AppPermission, error) <span class="cov0" title="0">{
+        // Get all permission IDs assigned to this user for this app
+        var userPermissions []domain.AppUserPermission
+        if err := s.db.Table("app_user_permissions").Where("app_id = ? AND user_id = ?", appID, userID).Find(&amp;userPermissions).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to list user permissions", "error", err)
+                return nil, errors.New("failed to list user permissions")
+        }</span>
+
+        // If user has no permissions, return empty list
+        <span class="cov0" title="0">if len(userPermissions) == 0 </span><span class="cov0" title="0">{
+                return []*domain.AppPermission{}, nil
+        }</span>
+
+        // Extract permission IDs
+        <span class="cov0" title="0">permissionIDs := make([]string, len(userPermissions))
+        for i, up := range userPermissions </span><span class="cov0" title="0">{
+                permissionIDs[i] = up.PermissionID
+        }</span>
+
+        // Get all permissions
+        <span class="cov0" title="0">var permissions []*domain.AppPermission
+        if err := s.db.Table("app_permissions").Where("id IN ?", permissionIDs).Find(&amp;permissions).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to get permissions", "error", err)
+                return nil, errors.New("failed to list user permissions")
+        }</span>
+
+        <span class="cov0" title="0">return permissions, nil</span>
+}
+
+// CheckUserPermission checks if a user has a specific permission for an application
+func (s *AppPermissionService) CheckUserPermission(ctx context.Context, appID, userID, permission string) (bool, error) <span class="cov0" title="0">{
+        // Validate permission
+        validPermissions := map[string]bool{
+                "read":   true,
+                "write":  true,
+                "delete": true,
+                "manage": true,
+        }
+
+        if !validPermissions[permission] </span><span class="cov0" title="0">{
+                return false, errors.New("invalid permission")
+        }</span>
+
+        // First check if user has any permissions for this app
+        <span class="cov0" title="0">var count int64
+        if err := s.db.Table("app_user_permissions").Where("app_id = ? AND user_id = ?", appID, userID).Count(&amp;count).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to check user permissions", "error", err)
+                return false, errors.New("failed to check user permission")
+        }</span>
+
+        // If user has no permissions for this app, return false
+        <span class="cov0" title="0">if count == 0 </span><span class="cov0" title="0">{
+                return false, nil
+        }</span>
+
+        // Get the permission ID for the specified permission name
+        <span class="cov0" title="0">var appPermission domain.AppPermission
+        if err := s.db.Table("app_permissions").Where("app_id = ? AND permission = ?", appID, permission).First(&amp;appPermission).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        // Permission doesn't exist for this app
+                        return false, nil
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find application permission", "error", err)
+                return false, errors.New("failed to check user permission")</span>
+        }
+
+        // Check if user has this specific permission
+        <span class="cov0" title="0">if err := s.db.Table("app_user_permissions").Where("app_id = ? AND user_id = ? AND permission_id = ?", appID, userID, appPermission.ID).First(&amp;domain.AppUserPermission{}).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return false, nil
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to check user permission", "error", err)
+                return false, errors.New("failed to check user permission")</span>
+        }
+
+        <span class="cov0" title="0">return true, nil</span>
+}
+
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package service
+
+import (
+        "context"
+        "errors"
+        "time"
+
+        "cdk-office/internal/app/domain"
+        "cdk-office/internal/shared/database"
+        "cdk-office/internal/shared/utils"
+        "cdk-office/pkg/logger"
+        "gorm.io/gorm"
+)
+
+// AppServiceInterface defines the interface for application service
+type AppServiceInterface interface {
+        CreateApplication(ctx context.Context, req *CreateApplicationRequest) (*domain.Application, error)
+        UpdateApplication(ctx context.Context, appID string, req *UpdateApplicationRequest) error
+        DeleteApplication(ctx context.Context, appID string) error
+        ListApplications(ctx context.Context, teamID string, page, size int) ([]*domain.Application, int64, error)
+        GetApplication(ctx context.Context, appID string) (*domain.Application, error)
+}
+
+// AppService implements the AppServiceInterface
+type AppService struct {
+        db *gorm.DB
+}
+
+// NewAppService creates a new instance of AppService
+func NewAppService() *AppService <span class="cov0" title="0">{
+        return &amp;AppService{
+                db: database.GetDB(),
+        }
+}</span>
+
+// NewAppServiceWithDB creates a new instance of AppService with a specific database connection
+func NewAppServiceWithDB(db *gorm.DB) *AppService <span class="cov8" title="1">{
+        return &amp;AppService{
+                db: db,
+        }
+}</span>
+
+// CreateApplicationRequest represents the request for creating an application
+type CreateApplicationRequest struct {
+        TeamID      string `json:"team_id" binding:"required"`
+        Name        string `json:"name" binding:"required"`
+        Description string `json:"description"`
+        Type        string `json:"type" binding:"required"`
+        Config      string `json:"config"`
+        CreatedBy   string `json:"created_by" binding:"required"`
+}
+
+// UpdateApplicationRequest represents the request for updating an application
+type UpdateApplicationRequest struct {
+        Name        string `json:"name"`
+        Description string `json:"description"`
+        Config      string `json:"config"`
+        IsActive    *bool  `json:"is_active"`
+}
+
+// Application represents the application entity
+type Application struct {
+        ID          string    `json:"id"`
+        TeamID      string    `json:"team_id"`
+        Name        string    `json:"name"`
+        Description string    `json:"description"`
+        Type        string    `json:"type"`
+        Config      string    `json:"config"`
+        IsActive    bool      `json:"is_active"`
+        CreatedBy   string    `json:"created_by"`
+        CreatedAt   time.Time `json:"created_at"`
+        UpdatedAt   time.Time `json:"updated_at"`
+}
+
+// CreateApplication creates a new application
+func (s *AppService) CreateApplication(ctx context.Context, req *CreateApplicationRequest) (*domain.Application, error) <span class="cov8" title="1">{
+        // Validate application type
+        validTypes := map[string]bool{
+                "qrcode": true,
+                "form":   true,
+                "survey": true,
+        }
+
+        if !validTypes[req.Type] </span><span class="cov0" title="0">{
+                return nil, errors.New("invalid application type")
+        }</span>
+
+        // Check if application with the same name already exists in the team
+        <span class="cov8" title="1">var existingApp domain.Application
+        if err := s.db.Where("team_id = ? AND name = ?", req.TeamID, req.Name).First(&amp;existingApp).Error; err == nil </span><span class="cov0" title="0">{
+                return nil, errors.New("application with this name already exists in the team")
+        }</span> else<span class="cov8" title="1"> if !errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                logger.Error("failed to check existing application", "error", err)
+                return nil, errors.New("failed to create application")
+        }</span>
+
+        // Create new application
+        <span class="cov8" title="1">app := &amp;domain.Application{
+                ID:          utils.GenerateAppID(),
+                TeamID:      req.TeamID,
+                Name:        req.Name,
+                Description: req.Description,
+                Type:        req.Type,
+                Config:      req.Config,
+                IsActive:    true,
+                CreatedBy:   req.CreatedBy,
+                CreatedAt:   time.Now(),
+                UpdatedAt:   time.Now(),
+        }
+
+        // Save application to database
+        if err := s.db.Create(app).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to create application", "error", err)
+                return nil, errors.New("failed to create application")
+        }</span>
+
+        <span class="cov8" title="1">return app, nil</span>
+}
+
+// UpdateApplication updates an existing application
+func (s *AppService) UpdateApplication(ctx context.Context, appID string, req *UpdateApplicationRequest) error <span class="cov8" title="1">{
+        // Find application by ID
+        var app domain.Application
+        if err := s.db.Where("id = ?", appID).First(&amp;app).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errors.New("application not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find application", "error", err)
+                return errors.New("failed to update application")</span>
+        }
+
+        // Update application fields
+        <span class="cov8" title="1">if req.Name != "" </span><span class="cov8" title="1">{
+                app.Name = req.Name
+        }</span>
+
+        <span class="cov8" title="1">if req.Description != "" </span><span class="cov0" title="0">{
+                app.Description = req.Description
+        }</span>
+
+        <span class="cov8" title="1">if req.Config != "" </span><span class="cov0" title="0">{
+                app.Config = req.Config
+        }</span>
+
+        <span class="cov8" title="1">if req.IsActive != nil </span><span class="cov0" title="0">{
+                app.IsActive = *req.IsActive
+        }</span>
+
+        <span class="cov8" title="1">app.UpdatedAt = time.Now()
+
+        // Save updated application to database
+        if err := s.db.Save(&amp;app).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to update application", "error", err)
+                return errors.New("failed to update application")
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+// DeleteApplication deletes an application
+func (s *AppService) DeleteApplication(ctx context.Context, appID string) error <span class="cov8" title="1">{
+        // Find application by ID
+        var app domain.Application
+        if err := s.db.Where("id = ?", appID).First(&amp;app).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errors.New("application not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find application", "error", err)
+                return errors.New("failed to delete application")</span>
+        }
+
+        // Delete application from database
+        <span class="cov8" title="1">if err := s.db.Delete(&amp;app).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to delete application", "error", err)
+                return errors.New("failed to delete application")
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+// ListApplications lists applications with pagination
+func (s *AppService) ListApplications(ctx context.Context, teamID string, page, size int) ([]*domain.Application, int64, error) <span class="cov0" title="0">{
+        // Validate pagination parameters
+        if page &lt; 1 </span><span class="cov0" title="0">{
+                page = 1
+        }</span>
+        <span class="cov0" title="0">if size &lt; 1 || size &gt; 100 </span><span class="cov0" title="0">{
+                size = 10
+        }</span>
+
+        // Build query
+        <span class="cov0" title="0">dbQuery := s.db.Model(&amp;domain.Application{}).Where("team_id = ?", teamID)
+
+        // Count total results
+        var total int64
+        if err := dbQuery.Count(&amp;total).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to count applications", "error", err)
+                return nil, 0, errors.New("failed to list applications")
+        }</span>
+
+        // Apply pagination
+        <span class="cov0" title="0">offset := (page - 1) * size
+        dbQuery = dbQuery.Offset(offset).Limit(size).Order("created_at desc")
+
+        // Execute query
+        var apps []*domain.Application
+        if err := dbQuery.Find(&amp;apps).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to list applications", "error", err)
+                return nil, 0, errors.New("failed to list applications")
+        }</span>
+
+        <span class="cov0" title="0">return apps, total, nil</span>
+}
+
+// GetApplication retrieves an application by ID
+func (s *AppService) GetApplication(ctx context.Context, appID string) (*domain.Application, error) <span class="cov0" title="0">{
+        var app domain.Application
+        if err := s.db.Where("id = ?", appID).First(&amp;app).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, errors.New("application not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find application", "error", err)
+                return nil, errors.New("failed to get application")</span>
+        }
+
+        <span class="cov0" title="0">return &amp;app, nil</span>
+}</pre>
+		
+		<pre class="file" id="file2" style="display: none">package service
+
+import (
+        "context"
+        "errors"
+        "fmt"
+        "os"
+        "path/filepath"
+        "strings"
+        "time"
+
+        "cdk-office/internal/app/domain"
+        "cdk-office/internal/shared/database"
+        "cdk-office/internal/shared/utils"
+        "cdk-office/pkg/logger"
+        "github.com/yougg/go-qrcode"
+        "gorm.io/gorm"
+)
+
+// BatchQRCodeServiceInterface defines the interface for batch QR code service
+type BatchQRCodeServiceInterface interface {
+        CreateBatchQRCode(ctx context.Context, req *CreateBatchQRCodeRequest) (*BatchQRCode, error)
+        UpdateBatchQRCode(ctx context.Context, batchID string, req *UpdateBatchQRCodeRequest) error
+        DeleteBatchQRCode(ctx context.Context, batchID string) error
+        ListBatchQRCodes(ctx context.Context, appID string, page, size int) ([]*BatchQRCode, int64, error)
+        GetBatchQRCode(ctx context.Context, batchID string) (*BatchQRCode, error)
+        GenerateBatchQRCodes(ctx context.Context, batchID string) ([]*domain.QRCode, error)
+}
+
+// BatchQRCodeService implements the BatchQRCodeServiceInterface
+type BatchQRCodeService struct {
+        db *gorm.DB
+}
+
+// NewBatchQRCodeService creates a new instance of BatchQRCodeService
+func NewBatchQRCodeService() *BatchQRCodeService <span class="cov0" title="0">{
+        return &amp;BatchQRCodeService{
+                db: database.GetDB(),
+        }
+}</span>
+
+// CreateBatchQRCodeRequest represents the request for creating a batch QR code
+type CreateBatchQRCodeRequest struct {
+        AppID       string            `json:"app_id" binding:"required"`
+        Name        string            `json:"name" binding:"required"`
+        Description string            `json:"description"`
+        Prefix      string            `json:"prefix"`
+        Count       int               `json:"count" binding:"required"`
+        Type        string            `json:"type" binding:"required"` // static or dynamic
+        URLTemplate string            `json:"url_template"`
+        Config      map[string]string `json:"config"`
+        CreatedBy   string            `json:"created_by" binding:"required"`
+}
+
+// UpdateBatchQRCodeRequest represents the request for updating a batch QR code
+type UpdateBatchQRCodeRequest struct {
+        Name        string `json:"name"`
+        Description string `json:"description"`
+        Prefix      string `json:"prefix"`
+        URLTemplate string `json:"url_template"`
+        Config      string `json:"config"`
+}
+
+// BatchQRCode represents the batch QR code entity
+type BatchQRCode struct {
+        ID          string    `json:"id"`
+        AppID       string    `json:"app_id"`
+        Name        string    `json:"name"`
+        Description string    `json:"description"`
+        Prefix      string    `json:"prefix"`
+        Count       int       `json:"count"`
+        Type        string    `json:"type"` // static or dynamic
+        URLTemplate string    `json:"url_template"`
+        Config      string    `json:"config"`
+        Status      string    `json:"status"` // pending, generating, completed, failed
+        CreatedBy   string    `json:"created_by"`
+        CreatedAt   time.Time `json:"created_at"`
+        UpdatedAt   time.Time `json:"updated_at"`
+}
+
+// CreateBatchQRCode creates a new batch QR code
+func (s *BatchQRCodeService) CreateBatchQRCode(ctx context.Context, req *CreateBatchQRCodeRequest) (*BatchQRCode, error) <span class="cov0" title="0">{
+        // Validate QR code type
+        if req.Type != "static" &amp;&amp; req.Type != "dynamic" </span><span class="cov0" title="0">{
+                return nil, errors.New("invalid QR code type")
+        }</span>
+
+        // Validate count
+        <span class="cov0" title="0">if req.Count &lt;= 0 || req.Count &gt; 10000 </span><span class="cov0" title="0">{
+                return nil, errors.New("invalid count, must be between 1 and 10000")
+        }</span>
+
+        // Create new batch QR code
+        <span class="cov0" title="0">batch := &amp;BatchQRCode{
+                ID:          utils.GenerateBatchID(),
+                AppID:       req.AppID,
+                Name:        req.Name,
+                Description: req.Description,
+                Prefix:      req.Prefix,
+                Count:       req.Count,
+                Type:        req.Type,
+                URLTemplate: req.URLTemplate,
+                Status:      "pending",
+                CreatedBy:   req.CreatedBy,
+                CreatedAt:   time.Now(),
+                UpdatedAt:   time.Now(),
+        }
+
+        // Save batch QR code to database
+        if err := s.db.Table("batch_qr_codes").Create(batch).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to create batch QR code", "error", err)
+                return nil, errors.New("failed to create batch QR code")
+        }</span>
+
+        <span class="cov0" title="0">return batch, nil</span>
+}
+
+// UpdateBatchQRCode updates an existing batch QR code
+func (s *BatchQRCodeService) UpdateBatchQRCode(ctx context.Context, batchID string, req *UpdateBatchQRCodeRequest) error <span class="cov0" title="0">{
+        // Find batch QR code by ID
+        var batch BatchQRCode
+        if err := s.db.Table("batch_qr_codes").Where("id = ?", batchID).First(&amp;batch).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errors.New("batch QR code not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find batch QR code", "error", err)
+                return errors.New("failed to update batch QR code")</span>
+        }
+
+        // Update batch QR code fields
+        <span class="cov0" title="0">if req.Name != "" </span><span class="cov0" title="0">{
+                batch.Name = req.Name
+        }</span>
+
+        <span class="cov0" title="0">if req.Description != "" </span><span class="cov0" title="0">{
+                batch.Description = req.Description
+        }</span>
+
+        <span class="cov0" title="0">if req.Prefix != "" </span><span class="cov0" title="0">{
+                batch.Prefix = req.Prefix
+        }</span>
+
+        <span class="cov0" title="0">if req.URLTemplate != "" </span><span class="cov0" title="0">{
+                batch.URLTemplate = req.URLTemplate
+        }</span>
+
+        <span class="cov0" title="0">if req.Config != "" </span><span class="cov0" title="0">{
+                batch.Config = req.Config
+        }</span>
+
+        <span class="cov0" title="0">batch.UpdatedAt = time.Now()
+
+        // Save updated batch QR code to database
+        if err := s.db.Table("batch_qr_codes").Save(&amp;batch).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to update batch QR code", "error", err)
+                return errors.New("failed to update batch QR code")
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// DeleteBatchQRCode deletes a batch QR code
+func (s *BatchQRCodeService) DeleteBatchQRCode(ctx context.Context, batchID string) error <span class="cov0" title="0">{
+        // Find batch QR code by ID
+        var batch BatchQRCode
+        if err := s.db.Table("batch_qr_codes").Where("id = ?", batchID).First(&amp;batch).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errors.New("batch QR code not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find batch QR code", "error", err)
+                return errors.New("failed to delete batch QR code")</span>
+        }
+
+        // Delete batch QR code from database
+        <span class="cov0" title="0">if err := s.db.Table("batch_qr_codes").Delete(&amp;batch).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to delete batch QR code", "error", err)
+                return errors.New("failed to delete batch QR code")
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// ListBatchQRCodes lists batch QR codes with pagination
+func (s *BatchQRCodeService) ListBatchQRCodes(ctx context.Context, appID string, page, size int) ([]*BatchQRCode, int64, error) <span class="cov0" title="0">{
+        // Validate pagination parameters
+        if page &lt; 1 </span><span class="cov0" title="0">{
+                page = 1
+        }</span>
+        <span class="cov0" title="0">if size &lt; 1 || size &gt; 100 </span><span class="cov0" title="0">{
+                size = 10
+        }</span>
+
+        // Build query
+        <span class="cov0" title="0">dbQuery := s.db.Table("batch_qr_codes").Where("app_id = ?", appID)
+
+        // Count total results
+        var total int64
+        if err := dbQuery.Count(&amp;total).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to count batch QR codes", "error", err)
+                return nil, 0, errors.New("failed to list batch QR codes")
+        }</span>
+
+        // Apply pagination
+        <span class="cov0" title="0">offset := (page - 1) * size
+        dbQuery = dbQuery.Offset(offset).Limit(size).Order("created_at desc")
+
+        // Execute query
+        var batches []*BatchQRCode
+        if err := dbQuery.Find(&amp;batches).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to list batch QR codes", "error", err)
+                return nil, 0, errors.New("failed to list batch QR codes")
+        }</span>
+
+        <span class="cov0" title="0">return batches, total, nil</span>
+}
+
+// GetBatchQRCode retrieves a batch QR code by ID
+func (s *BatchQRCodeService) GetBatchQRCode(ctx context.Context, batchID string) (*BatchQRCode, error) <span class="cov0" title="0">{
+        var batch BatchQRCode
+        if err := s.db.Table("batch_qr_codes").Where("id = ?", batchID).First(&amp;batch).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, errors.New("batch QR code not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find batch QR code", "error", err)
+                return nil, errors.New("failed to get batch QR code")</span>
+        }
+
+        <span class="cov0" title="0">return &amp;batch, nil</span>
+}
+
+// GenerateBatchQRCodes generates QR codes for a batch
+func (s *BatchQRCodeService) GenerateBatchQRCodes(ctx context.Context, batchID string) ([]*domain.QRCode, error) <span class="cov0" title="0">{
+        // Find batch QR code by ID
+        var batch BatchQRCode
+        if err := s.db.Table("batch_qr_codes").Where("id = ?", batchID).First(&amp;batch).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, errors.New("batch QR code not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find batch QR code", "error", err)
+                return nil, errors.New("failed to generate batch QR codes")</span>
+        }
+
+        // Update batch status to generating
+        <span class="cov0" title="0">batch.Status = "generating"
+        batch.UpdatedAt = time.Now()
+        if err := s.db.Table("batch_qr_codes").Save(&amp;batch).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to update batch status", "error", err)
+        }</span>
+
+        // Generate QR codes
+        <span class="cov0" title="0">var qrCodes []*domain.QRCode
+        for i := 1; i &lt;= batch.Count; i++ </span><span class="cov0" title="0">{
+                // Create QR code name
+                name := batch.Name
+                if batch.Prefix != "" </span><span class="cov0" title="0">{
+                        name = batch.Prefix + "_" + name
+                }</span>
+                <span class="cov0" title="0">name = fmt.Sprintf("%s_%d", name, i)
+
+                // Create QR code content
+                content := batch.URLTemplate
+                if content == "" </span><span class="cov0" title="0">{
+                        content = fmt.Sprintf("https://example.com/%s/%d", batch.ID, i)
+                }</span> else<span class="cov0" title="0"> {
+                        content = strings.ReplaceAll(batch.URLTemplate, "{index}", fmt.Sprintf("%d", i))
+                }</span>
+
+                // Create QR code URL
+                <span class="cov0" title="0">url := batch.URLTemplate
+                if url == "" </span><span class="cov0" title="0">{
+                        url = fmt.Sprintf("https://example.com/%s/%d", batch.ID, i)
+                }</span> else<span class="cov0" title="0"> {
+                        url = strings.ReplaceAll(batch.URLTemplate, "{index}", fmt.Sprintf("%d", i))
+                }</span>
+
+                // Create new QR code
+                <span class="cov0" title="0">qrCode := &amp;domain.QRCode{
+                        ID:        utils.GenerateQRCodeID(),
+                        AppID:     batch.AppID,
+                        Name:      name,
+                        Content:   content,
+                        Type:      batch.Type,
+                        URL:       url,
+                        CreatedBy: batch.CreatedBy,
+                        CreatedAt: time.Now(),
+                        UpdatedAt: time.Now(),
+                }
+
+                // Save QR code to database
+                if err := s.db.Create(qrCode).Error; err != nil </span><span class="cov0" title="0">{
+                        logger.Error("failed to create QR code", "error", err)
+                        // Update batch status to failed
+                        batch.Status = "failed"
+                        batch.UpdatedAt = time.Now()
+                        if err := s.db.Table("batch_qr_codes").Save(&amp;batch).Error; err != nil </span><span class="cov0" title="0">{
+                                logger.Error("failed to update batch status", "error", err)
+                        }</span>
+                        <span class="cov0" title="0">return nil, errors.New("failed to generate batch QR codes")</span>
+                }
+
+                <span class="cov0" title="0">qrCodes = append(qrCodes, qrCode)</span>
+        }
+
+        // Generate QR code images
+        <span class="cov0" title="0">qrService := NewQRCodeService()
+        for _, qrCode := range qrCodes </span><span class="cov0" title="0">{
+                imagePath, err := qrService.GenerateQRCodeImage(ctx, qrCode.ID)
+                if err != nil </span><span class="cov0" title="0">{
+                        logger.Error("failed to generate QR code image", "error", err)
+                        // Continue with other QR codes even if one fails
+                        continue</span>
+                }
+
+                // Update QR code with image path
+                <span class="cov0" title="0">qrCode.ImagePath = imagePath
+                if err := s.db.Save(qrCode).Error; err != nil </span><span class="cov0" title="0">{
+                        logger.Error("failed to update QR code with image path", "error", err)
+                }</span>
+        }
+
+        // Update batch status to completed
+        <span class="cov0" title="0">batch.Status = "completed"
+        batch.UpdatedAt = time.Now()
+        if err := s.db.Table("batch_qr_codes").Save(&amp;batch).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to update batch status", "error", err)
+        }</span>
+
+        <span class="cov0" title="0">return qrCodes, nil</span>
+}
+
+
+
+// generateQRCodeImage generates a QR code image and returns the image path
+func (s *BatchQRCodeService) generateQRCodeImage(qrCode *domain.QRCode) (string, error) <span class="cov0" title="0">{
+        // Create the directory for QR code images if it doesn't exist
+        imageDir := "/tmp/qrcodes"
+        if err := os.MkdirAll(imageDir, 0755); err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to create QR code directory", "error", err)
+                return "", errors.New("failed to create QR code directory")
+        }</span>
+
+        // Generate QR code image using the go-qrcode library
+        <span class="cov0" title="0">qr, err := qrcode.New(qrCode.Content, qrcode.Level(qrcode.High))
+        if err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to create QR code", "error", err)
+                return "", errors.New("failed to generate QR code image")
+        }</span>
+
+        // Save the QR code image to a file
+        <span class="cov0" title="0">imagePath := filepath.Join(imageDir, qrCode.ID+".png")
+        if err := qr.WriteFile(imagePath); err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to save QR code image", "error", err)
+                return "", errors.New("failed to save QR code image")
+        }</span>
+
+        <span class="cov0" title="0">return imagePath, nil</span>
+}</pre>
+		
+		<pre class="file" id="file3" style="display: none">package service
+
+import (
+        "context"
+        "errors"
+        "time"
+
+        "cdk-office/internal/shared/database"
+        "cdk-office/pkg/logger"
+        "gorm.io/gorm"
+)
+
+// DataCollectionServiceInterface defines the interface for data collection service
+type DataCollectionServiceInterface interface {
+        CreateDataCollection(ctx context.Context, req *CreateDataCollectionRequest) (*DataCollection, error)
+        UpdateDataCollection(ctx context.Context, collectionID string, req *UpdateDataCollectionRequest) error
+        DeleteDataCollection(ctx context.Context, collectionID string) error
+        ListDataCollections(ctx context.Context, appID string, page, size int) ([]*DataCollection, int64, error)
+        GetDataCollection(ctx context.Context, collectionID string) (*DataCollection, error)
+        SubmitDataEntry(ctx context.Context, req *SubmitDataEntryRequest) (*DataCollectionEntry, error)
+        ListDataEntries(ctx context.Context, collectionID string, page, size int) ([]*DataCollectionEntry, int64, error)
+        ExportDataEntries(ctx context.Context, collectionID string) ([]*DataCollectionEntry, error)
+}
+
+// DataCollectionService implements the DataCollectionServiceInterface
+type DataCollectionService struct {
+        db *gorm.DB
+}
+
+// NewDataCollectionService creates a new instance of DataCollectionService
+func NewDataCollectionService() *DataCollectionService <span class="cov0" title="0">{
+        return &amp;DataCollectionService{
+                db: database.GetDB(),
+        }
+}</span>
+
+// CreateDataCollectionRequest represents the request for creating a data collection
+type CreateDataCollectionRequest struct {
+        AppID       string `json:"app_id" binding:"required"`
+        Name        string `json:"name" binding:"required"`
+        Description string `json:"description"`
+        Schema      string `json:"schema" binding:"required"`
+        Config      string `json:"config"`
+        CreatedBy   string `json:"created_by" binding:"required"`
+}
+
+// UpdateDataCollectionRequest represents the request for updating a data collection
+type UpdateDataCollectionRequest struct {
+        Name        string `json:"name"`
+        Description string `json:"description"`
+        Schema      string `json:"schema"`
+        Config      string `json:"config"`
+        IsActive    *bool  `json:"is_active"`
+}
+
+// SubmitDataEntryRequest represents the request for submitting a data entry
+type SubmitDataEntryRequest struct {
+        CollectionID string `json:"collection_id" binding:"required"`
+        Data         string `json:"data" binding:"required"`
+        CreatedBy    string `json:"created_by" binding:"required"`
+}
+
+// DataCollection represents the data collection entity
+type DataCollection struct {
+        ID          string    `json:"id"`
+        AppID       string    `json:"app_id"`
+        Name        string    `json:"name"`
+        Description string    `json:"description"`
+        Schema      string    `json:"schema"`
+        Config      string    `json:"config"`
+        IsActive    bool      `json:"is_active"`
+        CreatedBy   string    `json:"created_by"`
+        CreatedAt   time.Time `json:"created_at"`
+        UpdatedAt   time.Time `json:"updated_at"`
+}
+
+// DataCollectionEntry represents a data entry in a collection
+type DataCollectionEntry struct {
+        ID          string    `json:"id"`
+        CollectionID string    `json:"collection_id"`
+        Data        string    `json:"data"`
+        CreatedBy   string    `json:"created_by"`
+        CreatedAt   time.Time `json:"created_at"`
+}
+
+// CreateDataCollection creates a new data collection
+func (s *DataCollectionService) CreateDataCollection(ctx context.Context, req *CreateDataCollectionRequest) (*DataCollection, error) <span class="cov0" title="0">{
+        // Create new data collection
+        collection := &amp;DataCollection{
+                ID:          generateCollectionID(),
+                AppID:       req.AppID,
+                Name:        req.Name,
+                Description: req.Description,
+                Schema:      req.Schema,
+                Config:      req.Config,
+                IsActive:    true,
+                CreatedBy:   req.CreatedBy,
+                CreatedAt:   time.Now(),
+                UpdatedAt:   time.Now(),
+        }
+
+        // Save data collection to database
+        if err := s.db.Table("data_collections").Create(collection).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to create data collection", "error", err)
+                return nil, errors.New("failed to create data collection")
+        }</span>
+
+        <span class="cov0" title="0">return collection, nil</span>
+}
+
+// UpdateDataCollection updates an existing data collection
+func (s *DataCollectionService) UpdateDataCollection(ctx context.Context, collectionID string, req *UpdateDataCollectionRequest) error <span class="cov0" title="0">{
+        // Find data collection by ID
+        var collection DataCollection
+        if err := s.db.Table("data_collections").Where("id = ?", collectionID).First(&amp;collection).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errors.New("data collection not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find data collection", "error", err)
+                return errors.New("failed to update data collection")</span>
+        }
+
+        // Update data collection fields
+        <span class="cov0" title="0">if req.Name != "" </span><span class="cov0" title="0">{
+                collection.Name = req.Name
+        }</span>
+
+        <span class="cov0" title="0">if req.Description != "" </span><span class="cov0" title="0">{
+                collection.Description = req.Description
+        }</span>
+
+        <span class="cov0" title="0">if req.Schema != "" </span><span class="cov0" title="0">{
+                collection.Schema = req.Schema
+        }</span>
+
+        <span class="cov0" title="0">if req.Config != "" </span><span class="cov0" title="0">{
+                collection.Config = req.Config
+        }</span>
+
+        <span class="cov0" title="0">if req.IsActive != nil </span><span class="cov0" title="0">{
+                collection.IsActive = *req.IsActive
+        }</span>
+
+        <span class="cov0" title="0">collection.UpdatedAt = time.Now()
+
+        // Save updated data collection to database
+        if err := s.db.Table("data_collections").Save(&amp;collection).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to update data collection", "error", err)
+                return errors.New("failed to update data collection")
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// DeleteDataCollection deletes a data collection
+func (s *DataCollectionService) DeleteDataCollection(ctx context.Context, collectionID string) error <span class="cov0" title="0">{
+        // Find data collection by ID
+        var collection DataCollection
+        if err := s.db.Table("data_collections").Where("id = ?", collectionID).First(&amp;collection).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errors.New("data collection not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find data collection", "error", err)
+                return errors.New("failed to delete data collection")</span>
+        }
+
+        // Delete data entries associated with this collection
+        <span class="cov0" title="0">if err := s.db.Table("data_collection_entries").Where("collection_id = ?", collectionID).Delete(&amp;DataCollectionEntry{}).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to delete data collection entries", "error", err)
+                return errors.New("failed to delete data collection entries")
+        }</span>
+
+        // Delete data collection from database
+        <span class="cov0" title="0">if err := s.db.Table("data_collections").Delete(&amp;collection).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to delete data collection", "error", err)
+                return errors.New("failed to delete data collection")
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// ListDataCollections lists data collections with pagination
+func (s *DataCollectionService) ListDataCollections(ctx context.Context, appID string, page, size int) ([]*DataCollection, int64, error) <span class="cov0" title="0">{
+        // Validate pagination parameters
+        if page &lt; 1 </span><span class="cov0" title="0">{
+                page = 1
+        }</span>
+        <span class="cov0" title="0">if size &lt; 1 || size &gt; 100 </span><span class="cov0" title="0">{
+                size = 10
+        }</span>
+
+        // Build query
+        <span class="cov0" title="0">dbQuery := s.db.Table("data_collections").Where("app_id = ?", appID)
+
+        // Count total results
+        var total int64
+        if err := dbQuery.Count(&amp;total).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to count data collections", "error", err)
+                return nil, 0, errors.New("failed to list data collections")
+        }</span>
+
+        // Apply pagination
+        <span class="cov0" title="0">offset := (page - 1) * size
+        dbQuery = dbQuery.Offset(offset).Limit(size).Order("created_at desc")
+
+        // Execute query
+        var collections []*DataCollection
+        if err := dbQuery.Find(&amp;collections).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to list data collections", "error", err)
+                return nil, 0, errors.New("failed to list data collections")
+        }</span>
+
+        <span class="cov0" title="0">return collections, total, nil</span>
+}
+
+// GetDataCollection retrieves a data collection by ID
+func (s *DataCollectionService) GetDataCollection(ctx context.Context, collectionID string) (*DataCollection, error) <span class="cov0" title="0">{
+        var collection DataCollection
+        if err := s.db.Table("data_collections").Where("id = ?", collectionID).First(&amp;collection).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, errors.New("data collection not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find data collection", "error", err)
+                return nil, errors.New("failed to get data collection")</span>
+        }
+
+        <span class="cov0" title="0">return &amp;collection, nil</span>
+}
+
+// SubmitDataEntry submits a new data entry to a collection
+func (s *DataCollectionService) SubmitDataEntry(ctx context.Context, req *SubmitDataEntryRequest) (*DataCollectionEntry, error) <span class="cov0" title="0">{
+        // Verify data collection exists and is active
+        var collection DataCollection
+        if err := s.db.Table("data_collections").Where("id = ? AND is_active = ?", req.CollectionID, true).First(&amp;collection).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, errors.New("data collection not found or inactive")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find data collection", "error", err)
+                return nil, errors.New("failed to submit data entry")</span>
+        }
+
+        // Create new data entry
+        <span class="cov0" title="0">entry := &amp;DataCollectionEntry{
+                ID:          generateEntryID(),
+                CollectionID: req.CollectionID,
+                Data:        req.Data,
+                CreatedBy:   req.CreatedBy,
+                CreatedAt:   time.Now(),
+        }
+
+        // Save data entry to database
+        if err := s.db.Table("data_collection_entries").Create(entry).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to create data entry", "error", err)
+                return nil, errors.New("failed to submit data entry")
+        }</span>
+
+        <span class="cov0" title="0">return entry, nil</span>
+}
+
+// ListDataEntries lists data entries with pagination
+func (s *DataCollectionService) ListDataEntries(ctx context.Context, collectionID string, page, size int) ([]*DataCollectionEntry, int64, error) <span class="cov0" title="0">{
+        // Validate pagination parameters
+        if page &lt; 1 </span><span class="cov0" title="0">{
+                page = 1
+        }</span>
+        <span class="cov0" title="0">if size &lt; 1 || size &gt; 100 </span><span class="cov0" title="0">{
+                size = 10
+        }</span>
+
+        // Verify data collection exists
+        <span class="cov0" title="0">var collection DataCollection
+        if err := s.db.Table("data_collections").Where("id = ?", collectionID).First(&amp;collection).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, 0, errors.New("data collection not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find data collection", "error", err)
+                return nil, 0, errors.New("failed to list data entries")</span>
+        }
+
+        // Build query
+        <span class="cov0" title="0">dbQuery := s.db.Table("data_collection_entries").Where("collection_id = ?", collectionID)
+
+        // Count total results
+        var total int64
+        if err := dbQuery.Count(&amp;total).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to count data entries", "error", err)
+                return nil, 0, errors.New("failed to list data entries")
+        }</span>
+
+        // Apply pagination
+        <span class="cov0" title="0">offset := (page - 1) * size
+        dbQuery = dbQuery.Offset(offset).Limit(size).Order("created_at desc")
+
+        // Execute query
+        var entries []*DataCollectionEntry
+        if err := dbQuery.Find(&amp;entries).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to list data entries", "error", err)
+                return nil, 0, errors.New("failed to list data entries")
+        }</span>
+
+        <span class="cov0" title="0">return entries, total, nil</span>
+}
+
+// ExportDataEntries exports all data entries from a collection
+func (s *DataCollectionService) ExportDataEntries(ctx context.Context, collectionID string) ([]*DataCollectionEntry, error) <span class="cov0" title="0">{
+        // Verify data collection exists
+        var collection DataCollection
+        if err := s.db.Table("data_collections").Where("id = ?", collectionID).First(&amp;collection).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, errors.New("data collection not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find data collection", "error", err)
+                return nil, errors.New("failed to export data entries")</span>
+        }
+
+        // Get all data entries
+        <span class="cov0" title="0">var entries []*DataCollectionEntry
+        if err := s.db.Table("data_collection_entries").Where("collection_id = ?", collectionID).Order("created_at asc").Find(&amp;entries).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to export data entries", "error", err)
+                return nil, errors.New("failed to export data entries")
+        }</span>
+
+        <span class="cov0" title="0">return entries, nil</span>
+}
+
+// generateCollectionID generates a unique collection ID
+func generateCollectionID() string <span class="cov0" title="0">{
+        // In a real application, use a proper ID generation library like uuid
+        return "collection_" + time.Now().Format("20060102150405")
+}</span>
+
+// generateEntryID generates a unique entry ID
+func generateEntryID() string <span class="cov0" title="0">{
+        // In a real application, use a proper ID generation library like uuid
+        return "entry_" + time.Now().Format("20060102150405")
+}</pre>
+		
+		<pre class="file" id="file4" style="display: none">package service
+
+import (
+        "context"
+        "errors"
+        "time"
+
+        "cdk-office/internal/app/domain"
+        "cdk-office/internal/shared/database"
+        "cdk-office/internal/shared/utils"
+        "cdk-office/pkg/logger"
+        "gorm.io/gorm"
+)
+
+// FormDesignerServiceInterface defines the interface for form designer service
+type FormDesignerServiceInterface interface {
+        CreateFormDesign(ctx context.Context, req *CreateFormDesignRequest) (*domain.FormDesign, error)
+        UpdateFormDesign(ctx context.Context, formID string, req *UpdateFormDesignRequest) error
+        DeleteFormDesign(ctx context.Context, formID string) error
+        ListFormDesigns(ctx context.Context, appID string, page, size int) ([]*domain.FormDesign, int64, error)
+        GetFormDesign(ctx context.Context, formID string) (*domain.FormDesign, error)
+        PublishFormDesign(ctx context.Context, formID string) error
+}
+
+// FormDesignerService implements the FormDesignerServiceInterface
+type FormDesignerService struct {
+        db *gorm.DB
+}
+
+// NewFormDesignerService creates a new instance of FormDesignerService
+func NewFormDesignerService() *FormDesignerService <span class="cov0" title="0">{
+        return &amp;FormDesignerService{
+                db: database.GetDB(),
+        }
+}</span>
+
+// CreateFormDesignRequest represents the request for creating a form design
+type CreateFormDesignRequest struct {
+        AppID       string `json:"app_id" binding:"required"`
+        Name        string `json:"name" binding:"required"`
+        Description string `json:"description"`
+        Schema      string `json:"schema" binding:"required"`
+        Config      string `json:"config"`
+        CreatedBy   string `json:"created_by" binding:"required"`
+}
+
+// UpdateFormDesignRequest represents the request for updating a form design
+type UpdateFormDesignRequest struct {
+        Name        string `json:"name"`
+        Description string `json:"description"`
+        Schema      string `json:"schema"`
+        Config      string `json:"config"`
+        IsActive    *bool  `json:"is_active"`
+}
+
+// FormDesign represents the form design entity
+type FormDesign struct {
+        ID          string    `json:"id"`
+        AppID       string    `json:"app_id"`
+        Name        string    `json:"name"`
+        Description string    `json:"description"`
+        Schema      string    `json:"schema"`
+        Config      string    `json:"config"`
+        IsActive    bool      `json:"is_active"`
+        IsPublished bool      `json:"is_published"`
+        CreatedBy   string    `json:"created_by"`
+        CreatedAt   time.Time `json:"created_at"`
+        UpdatedAt   time.Time `json:"updated_at"`
+}
+
+// CreateFormDesign creates a new form design
+func (s *FormDesignerService) CreateFormDesign(ctx context.Context, req *CreateFormDesignRequest) (*domain.FormDesign, error) <span class="cov0" title="0">{
+        // Create new form design
+        form := &amp;domain.FormDesign{
+                ID:          utils.GenerateFormDesignID(),
+                AppID:       req.AppID,
+                Name:        req.Name,
+                Description: req.Description,
+                Schema:      req.Schema,
+                Config:      req.Config,
+                IsActive:    true,
+                IsPublished: false,
+                CreatedBy:   req.CreatedBy,
+                CreatedAt:   time.Now(),
+                UpdatedAt:   time.Now(),
+        }
+
+        // Save form design to database
+        if err := s.db.Table("form_designs").Create(form).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to create form design", "error", err)
+                return nil, errors.New("failed to create form design")
+        }</span>
+
+        <span class="cov0" title="0">return form, nil</span>
+}
+
+// UpdateFormDesign updates an existing form design
+func (s *FormDesignerService) UpdateFormDesign(ctx context.Context, formID string, req *UpdateFormDesignRequest) error <span class="cov0" title="0">{
+        // Find form design by ID
+        var form domain.FormDesign
+        if err := s.db.Table("form_designs").Where("id = ?", formID).First(&amp;form).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errors.New("form design not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find form design", "error", err)
+                return errors.New("failed to update form design")</span>
+        }
+
+        // Check if form is published
+        <span class="cov0" title="0">if form.IsPublished </span><span class="cov0" title="0">{
+                return errors.New("cannot update published form design")
+        }</span>
+
+        // Update form design fields
+        <span class="cov0" title="0">if req.Name != "" </span><span class="cov0" title="0">{
+                form.Name = req.Name
+        }</span>
+
+        <span class="cov0" title="0">if req.Description != "" </span><span class="cov0" title="0">{
+                form.Description = req.Description
+        }</span>
+
+        <span class="cov0" title="0">if req.Schema != "" </span><span class="cov0" title="0">{
+                form.Schema = req.Schema
+        }</span>
+
+        <span class="cov0" title="0">if req.Config != "" </span><span class="cov0" title="0">{
+                form.Config = req.Config
+        }</span>
+
+        <span class="cov0" title="0">if req.IsActive != nil </span><span class="cov0" title="0">{
+                form.IsActive = *req.IsActive
+        }</span>
+
+        <span class="cov0" title="0">form.UpdatedAt = time.Now()
+
+        // Save updated form design to database
+        if err := s.db.Table("form_designs").Save(&amp;form).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to update form design", "error", err)
+                return errors.New("failed to update form design")
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// DeleteFormDesign deletes a form design
+func (s *FormDesignerService) DeleteFormDesign(ctx context.Context, formID string) error <span class="cov0" title="0">{
+        // Find form design by ID
+        var form domain.FormDesign
+        if err := s.db.Table("form_designs").Where("id = ?", formID).First(&amp;form).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errors.New("form design not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find form design", "error", err)
+                return errors.New("failed to delete form design")</span>
+        }
+
+        // Check if form is published
+        <span class="cov0" title="0">if form.IsPublished </span><span class="cov0" title="0">{
+                return errors.New("cannot delete published form design")
+        }</span>
+
+        // Delete form design from database
+        <span class="cov0" title="0">if err := s.db.Table("form_designs").Delete(&amp;form).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to delete form design", "error", err)
+                return errors.New("failed to delete form design")
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// ListFormDesigns lists form designs with pagination
+func (s *FormDesignerService) ListFormDesigns(ctx context.Context, appID string, page, size int) ([]*domain.FormDesign, int64, error) <span class="cov0" title="0">{
+        // Validate pagination parameters
+        if page &lt; 1 </span><span class="cov0" title="0">{
+                page = 1
+        }</span>
+        <span class="cov0" title="0">if size &lt; 1 || size &gt; 100 </span><span class="cov0" title="0">{
+                size = 10
+        }</span>
+
+        // Build query
+        <span class="cov0" title="0">dbQuery := s.db.Table("form_designs").Where("app_id = ?", appID)
+
+        // Count total results
+        var total int64
+        if err := dbQuery.Count(&amp;total).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to count form designs", "error", err)
+                return nil, 0, errors.New("failed to list form designs")
+        }</span>
+
+        // Apply pagination
+        <span class="cov0" title="0">offset := (page - 1) * size
+        dbQuery = dbQuery.Offset(offset).Limit(size).Order("created_at desc")
+
+        // Execute query
+        var forms []*domain.FormDesign
+        if err := dbQuery.Find(&amp;forms).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to list form designs", "error", err)
+                return nil, 0, errors.New("failed to list form designs")
+        }</span>
+
+        <span class="cov0" title="0">return forms, total, nil</span>
+}
+
+// GetFormDesign retrieves a form design by ID
+func (s *FormDesignerService) GetFormDesign(ctx context.Context, formID string) (*domain.FormDesign, error) <span class="cov0" title="0">{
+        var form domain.FormDesign
+        if err := s.db.Table("form_designs").Where("id = ?", formID).First(&amp;form).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, errors.New("form design not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find form design", "error", err)
+                return nil, errors.New("failed to get form design")</span>
+        }
+
+        <span class="cov0" title="0">return &amp;form, nil</span>
+}
+
+// PublishFormDesign publishes a form design
+func (s *FormDesignerService) PublishFormDesign(ctx context.Context, formID string) error <span class="cov0" title="0">{
+        // Find form design by ID
+        var form domain.FormDesign
+        if err := s.db.Table("form_designs").Where("id = ?", formID).First(&amp;form).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errors.New("form design not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find form design", "error", err)
+                return errors.New("failed to publish form design")</span>
+        }
+
+        // Check if form is already published
+        <span class="cov0" title="0">if form.IsPublished </span><span class="cov0" title="0">{
+                return errors.New("form design is already published")
+        }</span>
+
+        // Update form design status to published
+        <span class="cov0" title="0">form.IsPublished = true
+        form.UpdatedAt = time.Now()
+
+        // Save updated form design to database
+        if err := s.db.Table("form_designs").Save(&amp;form).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to publish form design", "error", err)
+                return errors.New("failed to publish form design")
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// generateFormID generates a unique form ID
+func generateFormID() string <span class="cov0" title="0">{
+        // In a real application, use a proper ID generation library like uuid
+        return "form_" + time.Now().Format("20060102150405")
+}</pre>
+		
+		<pre class="file" id="file5" style="display: none">package service
+
+import (
+        "context"
+        "errors"
+        "time"
+
+        "cdk-office/internal/app/domain"
+        "cdk-office/internal/shared/database"
+        "cdk-office/internal/shared/utils"
+        "cdk-office/pkg/logger"
+        "gorm.io/gorm"
+)
+
+// FormServiceInterface defines the interface for form service
+type FormServiceInterface interface {
+        CreateForm(ctx context.Context, req *CreateFormRequest) (*domain.FormData, error)
+        UpdateForm(ctx context.Context, formID string, req *UpdateFormRequest) error
+        DeleteForm(ctx context.Context, formID string) error
+        ListForms(ctx context.Context, appID string, page, size int) ([]*domain.FormData, int64, error)
+        GetForm(ctx context.Context, formID string) (*domain.FormData, error)
+        SubmitFormData(ctx context.Context, req *SubmitFormDataRequest) (*domain.FormDataEntry, error)
+        ListFormDataEntries(ctx context.Context, formID string, page, size int) ([]*domain.FormDataEntry, int64, error)
+}
+
+// FormService implements the FormServiceInterface
+type FormService struct {
+        db *gorm.DB
+}
+
+// NewFormService creates a new instance of FormService
+func NewFormService() *FormService <span class="cov0" title="0">{
+        return &amp;FormService{
+                db: database.GetDB(),
+        }
+}</span>
+
+// CreateFormRequest represents the request for creating a form
+type CreateFormRequest struct {
+        AppID       string `json:"app_id" binding:"required"`
+        Name        string `json:"name" binding:"required"`
+        Description string `json:"description"`
+        Schema      string `json:"schema" binding:"required"`
+        CreatedBy   string `json:"created_by" binding:"required"`
+}
+
+// UpdateFormRequest represents the request for updating a form
+type UpdateFormRequest struct {
+        Name        string `json:"name"`
+        Description string `json:"description"`
+        Schema      string `json:"schema"`
+        IsActive    *bool  `json:"is_active"`
+}
+
+// SubmitFormDataRequest represents the request for submitting form data
+type SubmitFormDataRequest struct {
+        FormID    string `json:"form_id" binding:"required"`
+        Data      string `json:"data" binding:"required"`
+        CreatedBy string `json:"created_by" binding:"required"`
+}
+
+// CreateForm creates a new form
+func (s *FormService) CreateForm(ctx context.Context, req *CreateFormRequest) (*domain.FormData, error) <span class="cov0" title="0">{
+        // Create new form
+        form := &amp;domain.FormData{
+                ID:          utils.GenerateFormID(),
+                AppID:       req.AppID,
+                Name:        req.Name,
+                Description: req.Description,
+                Schema:      req.Schema,
+                IsActive:    true,
+                CreatedBy:   req.CreatedBy,
+                CreatedAt:   time.Now(),
+                UpdatedAt:   time.Now(),
+        }
+
+        // Save form to database
+        if err := s.db.Create(form).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to create form", "error", err)
+                return nil, errors.New("failed to create form")
+        }</span>
+
+        <span class="cov0" title="0">return form, nil</span>
+}
+
+// UpdateForm updates an existing form
+func (s *FormService) UpdateForm(ctx context.Context, formID string, req *UpdateFormRequest) error <span class="cov0" title="0">{
+        // Find form by ID
+        var form domain.FormData
+        if err := s.db.Where("id = ?", formID).First(&amp;form).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errors.New("form not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find form", "error", err)
+                return errors.New("failed to update form")</span>
+        }
+
+        // Update form fields
+        <span class="cov0" title="0">if req.Name != "" </span><span class="cov0" title="0">{
+                form.Name = req.Name
+        }</span>
+
+        <span class="cov0" title="0">if req.Description != "" </span><span class="cov0" title="0">{
+                form.Description = req.Description
+        }</span>
+
+        <span class="cov0" title="0">if req.Schema != "" </span><span class="cov0" title="0">{
+                form.Schema = req.Schema
+        }</span>
+
+        <span class="cov0" title="0">if req.IsActive != nil </span><span class="cov0" title="0">{
+                form.IsActive = *req.IsActive
+        }</span>
+
+        <span class="cov0" title="0">form.UpdatedAt = time.Now()
+
+        // Save updated form to database
+        if err := s.db.Save(&amp;form).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to update form", "error", err)
+                return errors.New("failed to update form")
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// DeleteForm deletes a form
+func (s *FormService) DeleteForm(ctx context.Context, formID string) error <span class="cov0" title="0">{
+        // Find form by ID
+        var form domain.FormData
+        if err := s.db.Where("id = ?", formID).First(&amp;form).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errors.New("form not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find form", "error", err)
+                return errors.New("failed to delete form")</span>
+        }
+
+        // Delete form from database
+        <span class="cov0" title="0">if err := s.db.Delete(&amp;form).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to delete form", "error", err)
+                return errors.New("failed to delete form")
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// ListForms lists forms with pagination
+func (s *FormService) ListForms(ctx context.Context, appID string, page, size int) ([]*domain.FormData, int64, error) <span class="cov0" title="0">{
+        // Validate pagination parameters
+        if page &lt; 1 </span><span class="cov0" title="0">{
+                page = 1
+        }</span>
+        <span class="cov0" title="0">if size &lt; 1 || size &gt; 100 </span><span class="cov0" title="0">{
+                size = 10
+        }</span>
+
+        // Build query
+        <span class="cov0" title="0">dbQuery := s.db.Model(&amp;domain.FormData{}).Where("app_id = ?", appID)
+
+        // Count total results
+        var total int64
+        if err := dbQuery.Count(&amp;total).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to count forms", "error", err)
+                return nil, 0, errors.New("failed to list forms")
+        }</span>
+
+        // Apply pagination
+        <span class="cov0" title="0">offset := (page - 1) * size
+        dbQuery = dbQuery.Offset(offset).Limit(size).Order("created_at desc")
+
+        // Execute query
+        var forms []*domain.FormData
+        if err := dbQuery.Find(&amp;forms).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to list forms", "error", err)
+                return nil, 0, errors.New("failed to list forms")
+        }</span>
+
+        <span class="cov0" title="0">return forms, total, nil</span>
+}
+
+// GetForm retrieves a form by ID
+func (s *FormService) GetForm(ctx context.Context, formID string) (*domain.FormData, error) <span class="cov0" title="0">{
+        var form domain.FormData
+        if err := s.db.Where("id = ?", formID).First(&amp;form).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, errors.New("form not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find form", "error", err)
+                return nil, errors.New("failed to get form")</span>
+        }
+
+        <span class="cov0" title="0">return &amp;form, nil</span>
+}
+
+// SubmitFormData submits form data
+func (s *FormService) SubmitFormData(ctx context.Context, req *SubmitFormDataRequest) (*domain.FormDataEntry, error) <span class="cov0" title="0">{
+        // Verify form exists and is active
+        var form domain.FormData
+        if err := s.db.Where("id = ? AND is_active = ?", req.FormID, true).First(&amp;form).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, errors.New("form not found or inactive")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find form", "error", err)
+                return nil, errors.New("failed to submit form data")</span>
+        }
+
+        // Create form data entry
+        <span class="cov0" title="0">entry := &amp;domain.FormDataEntry{
+                ID:        generateFormEntryID(),
+                FormID:    req.FormID,
+                Data:      req.Data,
+                CreatedBy: req.CreatedBy,
+                CreatedAt: time.Now(),
+        }
+
+        // Save form data entry to database
+        if err := s.db.Create(entry).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to submit form data", "error", err)
+                return nil, errors.New("failed to submit form data")
+        }</span>
+
+        <span class="cov0" title="0">return entry, nil</span>
+}
+
+// ListFormDataEntries lists form data entries with pagination
+func (s *FormService) ListFormDataEntries(ctx context.Context, formID string, page, size int) ([]*domain.FormDataEntry, int64, error) <span class="cov0" title="0">{
+        // Validate pagination parameters
+        if page &lt; 1 </span><span class="cov0" title="0">{
+                page = 1
+        }</span>
+        <span class="cov0" title="0">if size &lt; 1 || size &gt; 100 </span><span class="cov0" title="0">{
+                size = 10
+        }</span>
+
+        // Build query
+        <span class="cov0" title="0">dbQuery := s.db.Model(&amp;domain.FormDataEntry{}).Where("form_id = ?", formID)
+
+        // Count total results
+        var total int64
+        if err := dbQuery.Count(&amp;total).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to count form data entries", "error", err)
+                return nil, 0, errors.New("failed to list form data entries")
+        }</span>
+
+        // Apply pagination
+        <span class="cov0" title="0">offset := (page - 1) * size
+        dbQuery = dbQuery.Offset(offset).Limit(size).Order("created_at desc")
+
+        // Execute query
+        var entries []*domain.FormDataEntry
+        if err := dbQuery.Find(&amp;entries).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to list form data entries", "error", err)
+                return nil, 0, errors.New("failed to list form data entries")
+        }</span>
+
+        <span class="cov0" title="0">return entries, total, nil</span>
+}
+
+
+
+// generateFormEntryID generates a unique form entry ID
+func generateFormEntryID() string <span class="cov0" title="0">{
+        // In a real application, use a proper ID generation library like uuid
+        return "entry_" + time.Now().Format("20060102150405")
+}</pre>
+		
+		<pre class="file" id="file6" style="display: none">package service
+
+import (
+        "context"
+        "errors"
+        "time"
+
+        "cdk-office/internal/app/domain"
+        "cdk-office/internal/shared/database"
+        "cdk-office/internal/shared/utils"
+        "cdk-office/pkg/logger"
+        "gorm.io/gorm"
+)
+
+// PermissionServiceInterface defines the interface for permission service
+type PermissionServiceInterface interface {
+        CreatePermission(ctx context.Context, req *CreatePermissionRequest) (*domain.AppPermission, error)
+        UpdatePermission(ctx context.Context, permissionID string, req *UpdatePermissionRequest) error
+        DeletePermission(ctx context.Context, permissionID string) error
+        ListPermissions(ctx context.Context, appID string, page, size int) ([]*domain.AppPermission, int64, error)
+        GetPermission(ctx context.Context, permissionID string) (*domain.AppPermission, error)
+        CheckPermission(ctx context.Context, appID, userID, action string) (bool, error)
+        AssignPermission(ctx context.Context, req *AssignPermissionRequest) error
+        RevokePermission(ctx context.Context, req *RevokePermissionRequest) error
+        ListUserPermissions(ctx context.Context, appID, userID string) ([]*domain.AppPermission, error)
+}
+
+// PermissionService implements the PermissionServiceInterface
+type PermissionService struct {
+        db *gorm.DB
+}
+
+// NewPermissionService creates a new instance of PermissionService
+func NewPermissionService() *PermissionService <span class="cov0" title="0">{
+        return &amp;PermissionService{
+                db: database.GetDB(),
+        }
+}</span>
+
+// CreatePermissionRequest represents the request for creating a permission
+type CreatePermissionRequest struct {
+        AppID       string `json:"app_id" binding:"required"`
+        Name        string `json:"name" binding:"required"`
+        Description string `json:"description"`
+        Action      string `json:"action" binding:"required"`
+        CreatedBy   string `json:"created_by" binding:"required"`
+}
+
+// UpdatePermissionRequest represents the request for updating a permission
+type UpdatePermissionRequest struct {
+        Name        string `json:"name"`
+        Description string `json:"description"`
+        Action      string `json:"action"`
+}
+
+// AssignPermissionRequest represents the request for assigning a permission to a user
+type AssignPermissionRequest struct {
+        AppID        string `json:"app_id" binding:"required"`
+        UserID       string `json:"user_id" binding:"required"`
+        PermissionID string `json:"permission_id" binding:"required"`
+        AssignedBy   string `json:"assigned_by" binding:"required"`
+}
+
+// RevokePermissionRequest represents the request for revoking a permission from a user
+type RevokePermissionRequest struct {
+        AppID        string `json:"app_id" binding:"required"`
+        UserID       string `json:"user_id" binding:"required"`
+        PermissionID string `json:"permission_id" binding:"required"`
+}
+
+
+
+// CreatePermission creates a new permission
+func (s *PermissionService) CreatePermission(ctx context.Context, req *CreatePermissionRequest) (*domain.AppPermission, error) <span class="cov0" title="0">{
+        // Validate action
+        validActions := map[string]bool{
+                "read":   true,
+                "write":  true,
+                "delete": true,
+                "admin":  true,
+        }
+
+        if !validActions[req.Action] </span><span class="cov0" title="0">{
+                return nil, errors.New("invalid permission action")
+        }</span>
+
+        // Check if permission with the same name already exists in the app
+        <span class="cov0" title="0">var existingPermission domain.AppPermission
+        if err := s.db.Table("app_permissions").Where("app_id = ? AND name = ?", req.AppID, req.Name).First(&amp;existingPermission).Error; err == nil </span><span class="cov0" title="0">{
+                return nil, errors.New("permission with this name already exists in the application")
+        }</span>
+
+        // Create new permission
+        <span class="cov0" title="0">permission := &amp;domain.AppPermission{
+                ID:          utils.GeneratePermissionID(),
+                AppID:       req.AppID,
+                Name:        req.Name,
+                Description: req.Description,
+                Permission:  req.Action,
+                CreatedBy:   req.CreatedBy,
+                CreatedAt:   time.Now(),
+                UpdatedAt:   time.Now(),
+        }
+
+        // Save permission to database
+        if err := s.db.Table("app_permissions").Create(permission).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to create permission", "error", err)
+                return nil, errors.New("failed to create permission")
+        }</span>
+
+        <span class="cov0" title="0">return permission, nil</span>
+}
+
+// UpdatePermission updates an existing permission
+func (s *PermissionService) UpdatePermission(ctx context.Context, permissionID string, req *UpdatePermissionRequest) error <span class="cov0" title="0">{
+        // Find permission by ID
+        var permission domain.AppPermission
+        if err := s.db.Table("app_permissions").Where("id = ?", permissionID).First(&amp;permission).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errors.New("permission not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find permission", "error", err)
+                return errors.New("failed to update permission")</span>
+        }
+
+        // Update permission fields
+        <span class="cov0" title="0">if req.Name != "" </span><span class="cov0" title="0">{
+                permission.Name = req.Name
+        }</span>
+
+        <span class="cov0" title="0">if req.Description != "" </span><span class="cov0" title="0">{
+                permission.Description = req.Description
+        }</span>
+
+        <span class="cov0" title="0">if req.Action != "" </span><span class="cov0" title="0">{
+                // Validate permission
+                validPermissions := map[string]bool{
+                        "read":   true,
+                        "write":  true,
+                        "delete": true,
+                        "admin":  true,
+                }
+
+                if !validPermissions[req.Action] </span><span class="cov0" title="0">{
+                        return errors.New("invalid permission")
+                }</span>
+                <span class="cov0" title="0">permission.Permission = req.Action</span>
+        }
+
+        <span class="cov0" title="0">permission.UpdatedAt = time.Now()
+
+        // Save updated permission to database
+        if err := s.db.Table("app_permissions").Save(&amp;permission).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to update permission", "error", err)
+                return errors.New("failed to update permission")
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// DeletePermission deletes a permission
+func (s *PermissionService) DeletePermission(ctx context.Context, permissionID string) error <span class="cov0" title="0">{
+        // Find permission by ID
+        var permission domain.AppPermission
+        if err := s.db.Table("app_permissions").Where("id = ?", permissionID).First(&amp;permission).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errors.New("permission not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find permission", "error", err)
+                return errors.New("failed to delete permission")</span>
+        }
+
+        // Delete permission from database
+        <span class="cov0" title="0">if err := s.db.Table("app_permissions").Delete(&amp;permission).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to delete permission", "error", err)
+                return errors.New("failed to delete permission")
+        }</span>
+
+        // Also delete all user permissions associated with this permission
+        <span class="cov0" title="0">if err := s.db.Table("app_user_permissions").Where("permission_id = ?", permissionID).Delete(&amp;domain.AppUserPermission{}).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to delete user permissions", "error", err)
+                // Don't return error here as the main permission was deleted successfully
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// ListPermissions lists permissions with pagination
+func (s *PermissionService) ListPermissions(ctx context.Context, appID string, page, size int) ([]*domain.AppPermission, int64, error) <span class="cov0" title="0">{
+        // Validate pagination parameters
+        if page &lt; 1 </span><span class="cov0" title="0">{
+                page = 1
+        }</span>
+        <span class="cov0" title="0">if size &lt; 1 || size &gt; 100 </span><span class="cov0" title="0">{
+                size = 10
+        }</span>
+
+        // Build query
+        <span class="cov0" title="0">dbQuery := s.db.Table("app_permissions").Where("app_id = ?", appID)
+
+        // Count total results
+        var total int64
+        if err := dbQuery.Count(&amp;total).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to count permissions", "error", err)
+                return nil, 0, errors.New("failed to list permissions")
+        }</span>
+
+        // Apply pagination
+        <span class="cov0" title="0">offset := (page - 1) * size
+        dbQuery = dbQuery.Offset(offset).Limit(size).Order("created_at desc")
+
+        // Execute query
+        var permissions []*domain.AppPermission
+        if err := dbQuery.Find(&amp;permissions).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to list permissions", "error", err)
+                return nil, 0, errors.New("failed to list permissions")
+        }</span>
+
+        <span class="cov0" title="0">return permissions, total, nil</span>
+}
+
+// GetPermission retrieves a permission by ID
+func (s *PermissionService) GetPermission(ctx context.Context, permissionID string) (*domain.AppPermission, error) <span class="cov0" title="0">{
+        var permission domain.AppPermission
+        if err := s.db.Table("app_permissions").Where("id = ?", permissionID).First(&amp;permission).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, errors.New("permission not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find permission", "error", err)
+                return nil, errors.New("failed to get permission")</span>
+        }
+
+        <span class="cov0" title="0">return &amp;permission, nil</span>
+}
+
+// CheckPermission checks if a user has a specific permission for an application
+func (s *PermissionService) CheckPermission(ctx context.Context, appID, userID, permission string) (bool, error) <span class="cov0" title="0">{
+        // First check if user has any permissions for this app
+        var count int64
+        if err := s.db.Table("app_user_permissions").Where("app_id = ? AND user_id = ?", appID, userID).Count(&amp;count).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to check user permissions", "error", err)
+                return false, errors.New("failed to check permission")
+        }</span>
+
+        // If user has no permissions for this app, return false
+        <span class="cov0" title="0">if count == 0 </span><span class="cov0" title="0">{
+                return false, nil
+        }</span>
+
+        // Check if user has the specific permission
+        <span class="cov0" title="0">var perm domain.AppPermission
+        if err := s.db.Table("app_permissions").Where("app_id = ? AND permission = ?", appID, permission).First(&amp;perm).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        // Permission doesn't exist, return false
+                        return false, nil
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find permission", "error", err)
+                return false, errors.New("failed to check permission")</span>
+        }
+
+        // Check if user has this specific permission
+        <span class="cov0" title="0">if err := s.db.Table("app_user_permissions").Where("app_id = ? AND user_id = ? AND permission_id = ?", appID, userID, perm.ID).First(&amp;domain.AppUserPermission{}).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return false, nil
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to check user permission", "error", err)
+                return false, errors.New("failed to check permission")</span>
+        }
+
+        <span class="cov0" title="0">return true, nil</span>
+}
+
+// AssignPermission assigns a permission to a user
+func (s *PermissionService) AssignPermission(ctx context.Context, req *AssignPermissionRequest) error <span class="cov0" title="0">{
+        // Check if permission exists
+        var permission domain.AppPermission
+        if err := s.db.Table("app_permissions").Where("id = ?", req.PermissionID).First(&amp;permission).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errors.New("permission not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find permission", "error", err)
+                return errors.New("failed to assign permission")</span>
+        }
+
+        // Check if permission is for the correct app
+        <span class="cov0" title="0">if permission.AppID != req.AppID </span><span class="cov0" title="0">{
+                return errors.New("permission does not belong to this application")
+        }</span>
+
+        // Check if user already has this permission
+        <span class="cov0" title="0">var existing domain.AppUserPermission
+        if err := s.db.Table("app_user_permissions").Where("app_id = ? AND user_id = ? AND permission_id = ?", req.AppID, req.UserID, req.PermissionID).First(&amp;existing).Error; err == nil </span><span class="cov0" title="0">{
+                // User already has this permission
+                return nil
+        }</span> else<span class="cov0" title="0"> if !errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                logger.Error("failed to check existing user permission", "error", err)
+                return errors.New("failed to assign permission")
+        }</span>
+
+        // Create new user permission
+        <span class="cov0" title="0">userPermission := &amp;domain.AppUserPermission{
+                ID:           generateUserPermissionID(),
+                AppID:        req.AppID,
+                UserID:       req.UserID,
+                PermissionID: req.PermissionID,
+                AssignedBy:   req.AssignedBy,
+                CreatedAt:    time.Now(),
+        }
+
+        // Save user permission to database
+        if err := s.db.Table("app_user_permissions").Create(userPermission).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to assign permission", "error", err)
+                return errors.New("failed to assign permission")
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// RevokePermission revokes a permission from a user
+func (s *PermissionService) RevokePermission(ctx context.Context, req *RevokePermissionRequest) error <span class="cov0" title="0">{
+        // Check if user has this permission
+        var userPermission domain.AppUserPermission
+        if err := s.db.Table("app_user_permissions").Where("app_id = ? AND user_id = ? AND permission_id = ?", req.AppID, req.UserID, req.PermissionID).First(&amp;userPermission).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        // User doesn't have this permission, nothing to revoke
+                        return nil
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find user permission", "error", err)
+                return errors.New("failed to revoke permission")</span>
+        }
+
+        // Delete user permission from database
+        <span class="cov0" title="0">if err := s.db.Table("app_user_permissions").Delete(&amp;userPermission).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to revoke permission", "error", err)
+                return errors.New("failed to revoke permission")
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// ListUserPermissions lists all permissions assigned to a user for an application
+func (s *PermissionService) ListUserPermissions(ctx context.Context, appID, userID string) ([]*domain.AppPermission, error) <span class="cov0" title="0">{
+        // Get all permission IDs assigned to this user for this app
+        var userPermissions []domain.AppUserPermission
+        if err := s.db.Table("app_user_permissions").Where("app_id = ? AND user_id = ?", appID, userID).Find(&amp;userPermissions).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to list user permissions", "error", err)
+                return nil, errors.New("failed to list user permissions")
+        }</span>
+
+        // If user has no permissions, return empty list
+        <span class="cov0" title="0">if len(userPermissions) == 0 </span><span class="cov0" title="0">{
+                return []*domain.AppPermission{}, nil
+        }</span>
+
+        // Extract permission IDs
+        <span class="cov0" title="0">permissionIDs := make([]string, len(userPermissions))
+        for i, up := range userPermissions </span><span class="cov0" title="0">{
+                permissionIDs[i] = up.PermissionID
+        }</span>
+
+        // Get all permissions
+        <span class="cov0" title="0">var permissions []*domain.AppPermission
+        if err := s.db.Table("app_permissions").Where("id IN ?", permissionIDs).Find(&amp;permissions).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to get permissions", "error", err)
+                return nil, errors.New("failed to list user permissions")
+        }</span>
+
+        <span class="cov0" title="0">return permissions, nil</span>
+}
+
+// generatePermissionID generates a unique permission ID
+func generatePermissionID() string <span class="cov0" title="0">{
+        // In a real application, use a proper ID generation library like uuid
+        return "perm_" + time.Now().Format("20060102150405")
+}</span>
+
+// generateUserPermissionID generates a unique user permission ID
+func generateUserPermissionID() string <span class="cov0" title="0">{
+        // In a real application, use a proper ID generation library like uuid
+        return "user_perm_" + time.Now().Format("20060102150405")
+}</pre>
+		
+		<pre class="file" id="file7" style="display: none">package service
+
+import (
+        "context"
+        "errors"
+        "os"
+        "path/filepath"
+        "time"
+
+        "cdk-office/internal/app/domain"
+        "cdk-office/internal/shared/database"
+        "cdk-office/internal/shared/utils"
+        "cdk-office/pkg/logger"
+        "github.com/yougg/go-qrcode"
+        "gorm.io/gorm"
+)
+
+// QRCodeServiceInterface defines the interface for QR code service
+type QRCodeServiceInterface interface {
+        CreateQRCode(ctx context.Context, req *CreateQRCodeRequest) (*domain.QRCode, error)
+        UpdateQRCode(ctx context.Context, qrCodeID string, req *UpdateQRCodeRequest) error
+        DeleteQRCode(ctx context.Context, qrCodeID string) error
+        ListQRCodes(ctx context.Context, appID string, page, size int) ([]*domain.QRCode, int64, error)
+        GetQRCode(ctx context.Context, qrCodeID string) (*domain.QRCode, error)
+        GenerateQRCodeImage(ctx context.Context, qrCodeID string) (string, error)
+}
+
+// QRCodeService implements the QRCodeServiceInterface
+type QRCodeService struct {
+        db *gorm.DB
+}
+
+// NewQRCodeService creates a new instance of QRCodeService
+func NewQRCodeService() *QRCodeService <span class="cov0" title="0">{
+        return &amp;QRCodeService{
+                db: database.GetDB(),
+        }
+}</span>
+
+// CreateQRCodeRequest represents the request for creating a QR code
+type CreateQRCodeRequest struct {
+        AppID     string `json:"app_id" binding:"required"`
+        Name      string `json:"name" binding:"required"`
+        Content   string `json:"content" binding:"required"`
+        Type      string `json:"type" binding:"required"` // static or dynamic
+        URL       string `json:"url"`
+        CreatedBy string `json:"created_by" binding:"required"`
+}
+
+// UpdateQRCodeRequest represents the request for updating a QR code
+type UpdateQRCodeRequest struct {
+        Name    string `json:"name"`
+        Content string `json:"content"`
+        URL     string `json:"url"`
+}
+
+// CreateQRCode creates a new QR code
+func (s *QRCodeService) CreateQRCode(ctx context.Context, req *CreateQRCodeRequest) (*domain.QRCode, error) <span class="cov0" title="0">{
+        // Validate QR code type
+        if req.Type != "static" &amp;&amp; req.Type != "dynamic" </span><span class="cov0" title="0">{
+                return nil, errors.New("invalid QR code type")
+        }</span>
+
+        // Create new QR code
+        <span class="cov0" title="0">qrCode := &amp;domain.QRCode{
+                ID:        utils.GenerateQRCodeID(),
+                AppID:     req.AppID,
+                Name:      req.Name,
+                Content:   req.Content,
+                Type:      req.Type,
+                URL:       req.URL,
+                CreatedBy: req.CreatedBy,
+                CreatedAt: time.Now(),
+                UpdatedAt: time.Now(),
+        }
+
+        // Save QR code to database
+        if err := s.db.Create(qrCode).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to create QR code", "error", err)
+                return nil, errors.New("failed to create QR code")
+        }</span>
+
+        // Generate QR code image
+        <span class="cov0" title="0">imagePath, err := s.GenerateQRCodeImage(ctx, qrCode.ID)
+        if err != nil </span><span class="cov0" title="0">{
+                // Log error but don't fail the entire operation
+                logger.Error("failed to generate QR code image", "error", err)
+        }</span> else<span class="cov0" title="0"> {
+                // Update QR code with image path
+                qrCode.ImagePath = imagePath
+                if err := s.db.Save(qrCode).Error; err != nil </span><span class="cov0" title="0">{
+                        logger.Error("failed to update QR code with image path", "error", err)
+                }</span>
+        }
+
+        <span class="cov0" title="0">return qrCode, nil</span>
+}
+
+// UpdateQRCode updates an existing QR code
+func (s *QRCodeService) UpdateQRCode(ctx context.Context, qrCodeID string, req *UpdateQRCodeRequest) error <span class="cov0" title="0">{
+        // Find QR code by ID
+        var qrCode domain.QRCode
+        if err := s.db.Where("id = ?", qrCodeID).First(&amp;qrCode).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errors.New("QR code not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find QR code", "error", err)
+                return errors.New("failed to update QR code")</span>
+        }
+
+        // Update QR code fields
+        <span class="cov0" title="0">if req.Name != "" </span><span class="cov0" title="0">{
+                qrCode.Name = req.Name
+        }</span>
+        
+        <span class="cov0" title="0">if req.Content != "" </span><span class="cov0" title="0">{
+                qrCode.Content = req.Content
+        }</span>
+        
+        <span class="cov0" title="0">if req.URL != "" </span><span class="cov0" title="0">{
+                qrCode.URL = req.URL
+        }</span>
+        
+        <span class="cov0" title="0">qrCode.UpdatedAt = time.Now()
+
+        // Save updated QR code to database
+        if err := s.db.Save(&amp;qrCode).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to update QR code", "error", err)
+                return errors.New("failed to update QR code")
+        }</span>
+
+        // Regenerate QR code image
+        <span class="cov0" title="0">imagePath, err := s.GenerateQRCodeImage(ctx, qrCode.ID)
+        if err != nil </span><span class="cov0" title="0">{
+                // Log error but don't fail the entire operation
+                logger.Error("failed to regenerate QR code image", "error", err)
+        }</span> else<span class="cov0" title="0"> {
+                // Update QR code with new image path
+                qrCode.ImagePath = imagePath
+                if err := s.db.Save(&amp;qrCode).Error; err != nil </span><span class="cov0" title="0">{
+                        logger.Error("failed to update QR code with new image path", "error", err)
+                }</span>
+        }
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// DeleteQRCode deletes a QR code
+func (s *QRCodeService) DeleteQRCode(ctx context.Context, qrCodeID string) error <span class="cov0" title="0">{
+        // Find QR code by ID
+        var qrCode domain.QRCode
+        if err := s.db.Where("id = ?", qrCodeID).First(&amp;qrCode).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errors.New("QR code not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find QR code", "error", err)
+                return errors.New("failed to delete QR code")</span>
+        }
+
+        // Delete QR code from database
+        <span class="cov0" title="0">if err := s.db.Delete(&amp;qrCode).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to delete QR code", "error", err)
+                return errors.New("failed to delete QR code")
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// ListQRCodes lists QR codes with pagination
+func (s *QRCodeService) ListQRCodes(ctx context.Context, appID string, page, size int) ([]*domain.QRCode, int64, error) <span class="cov0" title="0">{
+        // Validate pagination parameters
+        if page &lt; 1 </span><span class="cov0" title="0">{
+                page = 1
+        }</span>
+        <span class="cov0" title="0">if size &lt; 1 || size &gt; 100 </span><span class="cov0" title="0">{
+                size = 10
+        }</span>
+
+        // Build query
+        <span class="cov0" title="0">dbQuery := s.db.Model(&amp;domain.QRCode{}).Where("app_id = ?", appID)
+
+        // Count total results
+        var total int64
+        if err := dbQuery.Count(&amp;total).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to count QR codes", "error", err)
+                return nil, 0, errors.New("failed to list QR codes")
+        }</span>
+
+        // Apply pagination
+        <span class="cov0" title="0">offset := (page - 1) * size
+        dbQuery = dbQuery.Offset(offset).Limit(size).Order("created_at desc")
+
+        // Execute query
+        var qrCodes []*domain.QRCode
+        if err := dbQuery.Find(&amp;qrCodes).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to list QR codes", "error", err)
+                return nil, 0, errors.New("failed to list QR codes")
+        }</span>
+
+        <span class="cov0" title="0">return qrCodes, total, nil</span>
+}
+
+// GetQRCode retrieves a QR code by ID
+func (s *QRCodeService) GetQRCode(ctx context.Context, qrCodeID string) (*domain.QRCode, error) <span class="cov0" title="0">{
+        var qrCode domain.QRCode
+        if err := s.db.Where("id = ?", qrCodeID).First(&amp;qrCode).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, errors.New("QR code not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find QR code", "error", err)
+                return nil, errors.New("failed to get QR code")</span>
+        }
+
+        <span class="cov0" title="0">return &amp;qrCode, nil</span>
+}
+
+// GenerateQRCodeImage generates a QR code image
+func (s *QRCodeService) GenerateQRCodeImage(ctx context.Context, qrCodeID string) (string, error) <span class="cov0" title="0">{
+        // Find QR code by ID
+        var qrCode domain.QRCode
+        if err := s.db.Where("id = ?", qrCodeID).First(&amp;qrCode).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return "", errors.New("QR code not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find QR code", "error", err)
+                return "", errors.New("failed to generate QR code image")</span>
+        }
+
+        // Create the directory for QR code images if it doesn't exist
+        <span class="cov0" title="0">imageDir := "/tmp/qrcodes"
+        if err := os.MkdirAll(imageDir, 0755); err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to create QR code directory", "error", err)
+                return "", errors.New("failed to create QR code directory")
+        }</span>
+
+        // Generate QR code image using the go-qrcode library
+        <span class="cov0" title="0">qr, err := qrcode.New(qrCode.Content, qrcode.Level(qrcode.High))
+        if err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to create QR code", "error", err)
+                return "", errors.New("failed to generate QR code image")
+        }</span>
+
+        // Save the QR code image to a file
+        <span class="cov0" title="0">imagePath := filepath.Join(imageDir, qrCode.ID+".png")
+        if err := qr.WriteFile(imagePath); err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to save QR code image", "error", err)
+                return "", errors.New("failed to save QR code image")
+        }</span>
+
+        <span class="cov0" title="0">return imagePath, nil</span>
+}
+
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">package service
+
+import (
+        "context"
+        "errors"
+        "time"
+
+        "cdk-office/internal/document/domain"
+        "cdk-office/internal/shared/database"
+        "cdk-office/pkg/logger"
+        "gorm.io/gorm"
+)
+
+// CategoryServiceInterface defines the interface for category service
+type CategoryServiceInterface interface {
+        CreateCategory(ctx context.Context, name, description, parentID string) (*domain.DocumentCategory, error)
+        GetCategory(ctx context.Context, categoryID string) (*domain.DocumentCategory, error)
+        UpdateCategory(ctx context.Context, categoryID, name, description string) error
+        DeleteCategory(ctx context.Context, categoryID string) error
+        ListCategories(ctx context.Context, parentID string) ([]*domain.DocumentCategory, error)
+        AssignDocumentToCategory(ctx context.Context, documentID, categoryID string) error
+        RemoveDocumentFromCategory(ctx context.Context, documentID, categoryID string) error
+        GetDocumentCategories(ctx context.Context, documentID string) ([]*domain.DocumentCategory, error)
+}
+
+// CategoryService implements the CategoryServiceInterface
+type CategoryService struct {
+        db *gorm.DB
+}
+
+// NewCategoryService creates a new instance of CategoryService
+func NewCategoryService() *CategoryService <span class="cov0" title="0">{
+        return &amp;CategoryService{
+                db: database.GetDB(),
+        }
+}</span>
+
+// CreateCategory creates a new document category
+func (s *CategoryService) CreateCategory(ctx context.Context, name, description, parentID string) (*domain.DocumentCategory, error) <span class="cov0" title="0">{
+        // Check if parent category exists (if parentID is provided)
+        if parentID != "" </span><span class="cov0" title="0">{
+                var parentCategory domain.DocumentCategory
+                if err := s.db.Where("id = ?", parentID).First(&amp;parentCategory).Error; err != nil </span><span class="cov0" title="0">{
+                        if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                                return nil, errors.New("parent category not found")
+                        }</span>
+                        <span class="cov0" title="0">logger.Error("failed to find parent category", "error", err)
+                        return nil, errors.New("failed to create category")</span>
+                }
+        }
+
+        // Create new category
+        <span class="cov0" title="0">category := &amp;domain.DocumentCategory{
+                ID:          generateID(),
+                Name:        name,
+                Description: description,
+                ParentID:    parentID,
+                CreatedAt:   time.Now(),
+                UpdatedAt:   time.Now(),
+        }
+
+        // Save category to database
+        if err := s.db.Create(category).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to create category", "error", err)
+                return nil, errors.New("failed to create category")
+        }</span>
+
+        <span class="cov0" title="0">return category, nil</span>
+}
+
+// GetCategory retrieves a category by ID
+func (s *CategoryService) GetCategory(ctx context.Context, categoryID string) (*domain.DocumentCategory, error) <span class="cov0" title="0">{
+        var category domain.DocumentCategory
+        if err := s.db.Where("id = ?", categoryID).First(&amp;category).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, errors.New("category not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find category", "error", err)
+                return nil, errors.New("failed to get category")</span>
+        }
+
+        <span class="cov0" title="0">return &amp;category, nil</span>
+}
+
+// UpdateCategory updates a category
+func (s *CategoryService) UpdateCategory(ctx context.Context, categoryID, name, description string) error <span class="cov0" title="0">{
+        // Find category by ID
+        var category domain.DocumentCategory
+        if err := s.db.Where("id = ?", categoryID).First(&amp;category).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errors.New("category not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find category", "error", err)
+                return errors.New("failed to update category")</span>
+        }
+
+        // Update category fields
+        <span class="cov0" title="0">if name != "" </span><span class="cov0" title="0">{
+                category.Name = name
+        }</span>
+        <span class="cov0" title="0">if description != "" </span><span class="cov0" title="0">{
+                category.Description = description
+        }</span>
+        <span class="cov0" title="0">category.UpdatedAt = time.Now()
+
+        // Save updated category to database
+        if err := s.db.Save(&amp;category).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to update category", "error", err)
+                return errors.New("failed to update category")
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// DeleteCategory deletes a category
+func (s *CategoryService) DeleteCategory(ctx context.Context, categoryID string) error <span class="cov0" title="0">{
+        // Find category by ID
+        var category domain.DocumentCategory
+        if err := s.db.Where("id = ?", categoryID).First(&amp;category).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errors.New("category not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find category", "error", err)
+                return errors.New("failed to delete category")</span>
+        }
+
+        // Check if category has child categories
+        <span class="cov0" title="0">var childCount int64
+        if err := s.db.Model(&amp;domain.DocumentCategory{}).Where("parent_id = ?", categoryID).Count(&amp;childCount).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to count child categories", "error", err)
+                return errors.New("failed to delete category")
+        }</span>
+
+        <span class="cov0" title="0">if childCount &gt; 0 </span><span class="cov0" title="0">{
+                return errors.New("cannot delete category with child categories")
+        }</span>
+
+        // Delete category from database
+        <span class="cov0" title="0">if err := s.db.Delete(&amp;category).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to delete category", "error", err)
+                return errors.New("failed to delete category")
+        }</span>
+
+        // Delete all document-category relations for this category
+        <span class="cov0" title="0">if err := s.db.Where("category_id = ?", categoryID).Delete(&amp;domain.DocumentCategoryRelation{}).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to delete document-category relations", "error", err)
+                // Note: In a real application, you might want to handle this error more gracefully
+                // For now, we'll just log it and continue
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// ListCategories lists all categories with a specific parent ID (or all root categories if parentID is empty)
+func (s *CategoryService) ListCategories(ctx context.Context, parentID string) ([]*domain.DocumentCategory, error) <span class="cov0" title="0">{
+        var categories []*domain.DocumentCategory
+
+        // Build query based on parentID
+        query := s.db
+        if parentID != "" </span><span class="cov0" title="0">{
+                query = query.Where("parent_id = ?", parentID)
+        }</span> else<span class="cov0" title="0"> {
+                query = query.Where("parent_id = ?", "")
+        }</span>
+
+        // Execute query
+        <span class="cov0" title="0">if err := query.Find(&amp;categories).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to list categories", "error", err)
+                return nil, errors.New("failed to list categories")
+        }</span>
+
+        <span class="cov0" title="0">return categories, nil</span>
+}
+
+// AssignDocumentToCategory assigns a document to a category
+func (s *CategoryService) AssignDocumentToCategory(ctx context.Context, documentID, categoryID string) error <span class="cov0" title="0">{
+        // Check if document exists
+        var documentCount int64
+        if err := s.db.Model(&amp;domain.Document{}).Where("id = ?", documentID).Count(&amp;documentCount).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to count documents", "error", err)
+                return errors.New("failed to assign document to category")
+        }</span>
+
+        <span class="cov0" title="0">if documentCount == 0 </span><span class="cov0" title="0">{
+                return errors.New("document not found")
+        }</span>
+
+        // Check if category exists
+        <span class="cov0" title="0">var categoryCount int64
+        if err := s.db.Model(&amp;domain.DocumentCategory{}).Where("id = ?", categoryID).Count(&amp;categoryCount).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to count categories", "error", err)
+                return errors.New("failed to assign document to category")
+        }</span>
+
+        <span class="cov0" title="0">if categoryCount == 0 </span><span class="cov0" title="0">{
+                return errors.New("category not found")
+        }</span>
+
+        // Check if relation already exists
+        <span class="cov0" title="0">var relationCount int64
+        if err := s.db.Model(&amp;domain.DocumentCategoryRelation{}).
+                Where("document_id = ? AND category_id = ?", documentID, categoryID).
+                Count(&amp;relationCount).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to count document-category relations", "error", err)
+                return errors.New("failed to assign document to category")
+        }</span>
+
+        <span class="cov0" title="0">if relationCount &gt; 0 </span><span class="cov0" title="0">{
+                // Relation already exists, nothing to do
+                return nil
+        }</span>
+
+        // Create document-category relation
+        <span class="cov0" title="0">relation := &amp;domain.DocumentCategoryRelation{
+                ID:         generateID(),
+                DocumentID: documentID,
+                CategoryID: categoryID,
+                CreatedAt:  time.Now(),
+        }
+
+        if err := s.db.Create(relation).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to create document-category relation", "error", err)
+                return errors.New("failed to assign document to category")
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// RemoveDocumentFromCategory removes a document from a category
+func (s *CategoryService) RemoveDocumentFromCategory(ctx context.Context, documentID, categoryID string) error <span class="cov0" title="0">{
+        // Delete document-category relation
+        result := s.db.Where("document_id = ? AND category_id = ?", documentID, categoryID).
+                Delete(&amp;domain.DocumentCategoryRelation{})
+
+        if result.Error != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to delete document-category relation", "error", result.Error)
+                return errors.New("failed to remove document from category")
+        }</span>
+
+        <span class="cov0" title="0">if result.RowsAffected == 0 </span><span class="cov0" title="0">{
+                return errors.New("document-category relation not found")
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// GetDocumentCategories retrieves all categories for a document
+func (s *CategoryService) GetDocumentCategories(ctx context.Context, documentID string) ([]*domain.DocumentCategory, error) <span class="cov0" title="0">{
+        // Check if document exists
+        var documentCount int64
+        if err := s.db.Model(&amp;domain.Document{}).Where("id = ?", documentID).Count(&amp;documentCount).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to count documents", "error", err)
+                return nil, errors.New("failed to get document categories")
+        }</span>
+
+        <span class="cov0" title="0">if documentCount == 0 </span><span class="cov0" title="0">{
+                return nil, errors.New("document not found")
+        }</span>
+
+        // Get category IDs for the document
+        <span class="cov0" title="0">var relations []domain.DocumentCategoryRelation
+        if err := s.db.Where("document_id = ?", documentID).Find(&amp;relations).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to find document-category relations", "error", err)
+                return nil, errors.New("failed to get document categories")
+        }</span>
+
+        // If no categories, return empty slice
+        <span class="cov0" title="0">if len(relations) == 0 </span><span class="cov0" title="0">{
+                return []*domain.DocumentCategory{}, nil
+        }</span>
+
+        // Extract category IDs
+        <span class="cov0" title="0">categoryIDs := make([]string, len(relations))
+        for i, relation := range relations </span><span class="cov0" title="0">{
+                categoryIDs[i] = relation.CategoryID
+        }</span>
+
+        // Get categories
+        <span class="cov0" title="0">var categories []*domain.DocumentCategory
+        if err := s.db.Where("id IN ?", categoryIDs).Find(&amp;categories).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to find categories", "error", err)
+                return nil, errors.New("failed to get document categories")
+        }</span>
+
+        <span class="cov0" title="0">return categories, nil</span>
+}
+
+// generateID generates a unique ID (simplified implementation)
+func generateID() string <span class="cov0" title="0">{
+        // In a real application, use a proper ID generation library like uuid
+        return "cat_" + time.Now().Format("20060102150405")
+}</pre>
+		
+		<pre class="file" id="file9" style="display: none">package service
+
+import (
+        "cdk-office/internal/document/domain"
+        "cdk-office/internal/dify/client"
+        "cdk-office/pkg/logger"
+        "context"
+        "fmt"
+)
+
+// ClassifierInterface defines the interface for document classification service
+type ClassifierInterface interface {
+        ClassifyDocument(ctx context.Context, content string, document *domain.Document) (string, error)
+}
+
+// Classifier implements the ClassifierInterface
+type Classifier struct {
+        difyClient client.DifyClientInterface
+}
+
+// NewClassifier creates a new instance of Classifier
+func NewClassifier(difyClient client.DifyClientInterface) *Classifier <span class="cov0" title="0">{
+        return &amp;Classifier{
+                difyClient: difyClient,
+        }
+}</span>
+
+// ClassifyDocument classifies a document using Dify AI
+func (c *Classifier) ClassifyDocument(ctx context.Context, content string, document *domain.Document) (string, error) <span class="cov0" title="0">{
+        // Prepare the classification prompt
+        prompt := fmt.Sprintf("Please classify the following document content into one of these categories: technical_document, business_document, legal_document, personal_document, other.\n\nDocument title: %s\n\nDocument content:\n%s", document.Title, content)
+
+        // Create completion request
+        req := &amp;client.CompletionRequest{
+                Query:        prompt,
+                ResponseMode: "blocking",
+                User:         document.OwnerID,
+        }
+
+        // Send request to Dify
+        resp, err := c.difyClient.CreateCompletionMessage(ctx, req)
+        if err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to classify document with Dify", "error", err)
+                return "", fmt.Errorf("failed to classify document: %v", err)
+        }</span>
+
+        // Return the classification result
+        <span class="cov0" title="0">return resp.Answer, nil</span>
+}</pre>
+		
+		<pre class="file" id="file10" style="display: none">package service
+
+import (
+        "cdk-office/internal/document/domain"
+        "cdk-office/pkg/logger"
+        "bytes"
+        "fmt"
+        "github.com/EndFirstCorp/doc2txt"
+        "github.com/dslipak/pdf"
+        "github.com/nguyenthenguyen/docx"
+        "golang.org/x/net/html"
+        "io"
+        "os"
+        "path/filepath"
+        "strings"
+)
+
+// ContentExtractorInterface defines the interface for content extraction service
+type ContentExtractorInterface interface {
+        ExtractContent(document *domain.Document) (string, error)
+}
+
+// ContentExtractor implements the ContentExtractorInterface
+type ContentExtractor struct {
+        storagePath string
+}
+
+// NewContentExtractor creates a new instance of ContentExtractor
+func NewContentExtractor(storagePath string) *ContentExtractor <span class="cov0" title="0">{
+        return &amp;ContentExtractor{
+                storagePath: storagePath,
+        }
+}</span>
+
+// ExtractContent extracts content from a document
+func (ce *ContentExtractor) ExtractContent(document *domain.Document) (string, error) <span class="cov0" title="0">{
+        // Determine file path
+        filePath := document.FilePath
+        if !filepath.IsAbs(filePath) </span><span class="cov0" title="0">{
+                filePath = filepath.Join(ce.storagePath, filePath)
+        }</span>
+
+        // Check if file exists
+        <span class="cov0" title="0">if _, err := os.Stat(filePath); os.IsNotExist(err) </span><span class="cov0" title="0">{
+                logger.Error("file not found", "file_path", filePath)
+                return "", fmt.Errorf("file not found: %s", filePath)
+        }</span>
+
+        // Extract content based on file type
+        <span class="cov0" title="0">switch strings.ToLower(document.MimeType) </span>{
+        case "text/plain":<span class="cov0" title="0">
+                return ce.extractTextContent(filePath)</span>
+        case "text/html":<span class="cov0" title="0">
+                return ce.extractHTMLContent(filePath)</span>
+        case "application/pdf":<span class="cov0" title="0">
+                return ce.extractPDFContent(filePath)</span>
+        case "application/msword":<span class="cov0" title="0">
+                return ce.extractDOCContent(filePath)</span>
+        case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":<span class="cov0" title="0">
+                return ce.extractDOCXContent(filePath)</span>
+        default:<span class="cov0" title="0">
+                // For unsupported file types, return basic file information
+                return ce.extractGenericContent(document)</span>
+        }
+}
+
+// extractTextContent extracts content from a text file
+func (ce *ContentExtractor) extractTextContent(filePath string) (string, error) <span class="cov0" title="0">{
+        file, err := os.Open(filePath)
+        if err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to open text file", "error", err)
+                return "", fmt.Errorf("failed to open text file: %v", err)
+        }</span>
+        <span class="cov0" title="0">defer file.Close()
+
+        content, err := io.ReadAll(file)
+        if err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to read text file", "error", err)
+                return "", fmt.Errorf("failed to read text file: %v", err)
+        }</span>
+
+        <span class="cov0" title="0">return string(content), nil</span>
+}
+
+// extractHTMLContent extracts content from an HTML file
+func (ce *ContentExtractor) extractHTMLContent(filePath string) (string, error) <span class="cov0" title="0">{
+        // Open the HTML file
+        file, err := os.Open(filePath)
+        if err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to open HTML file", "error", err)
+                return "", fmt.Errorf("failed to open HTML file: %v", err)
+        }</span>
+        <span class="cov0" title="0">defer file.Close()
+
+        // Parse the HTML document
+        doc, err := html.Parse(file)
+        if err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to parse HTML file", "error", err)
+                return "", fmt.Errorf("failed to parse HTML file: %v", err)
+        }</span>
+
+        // Extract text content from the HTML document
+        <span class="cov0" title="0">var textContent string
+        var extractText func(*html.Node)
+        extractText = func(n *html.Node) </span><span class="cov0" title="0">{
+                if n.Type == html.TextNode </span><span class="cov0" title="0">{
+                        textContent += n.Data
+                }</span>
+                <span class="cov0" title="0">for c := n.FirstChild; c != nil; c = c.NextSibling </span><span class="cov0" title="0">{
+                        extractText(c)
+                }</span>
+        }
+        <span class="cov0" title="0">extractText(doc)
+
+        return textContent, nil</span>
+}
+
+// extractPDFContent extracts content from a PDF file
+func (ce *ContentExtractor) extractPDFContent(filePath string) (string, error) <span class="cov0" title="0">{
+        // Open the PDF file
+        r, err := pdf.Open(filePath)
+        if err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to open PDF file", "error", err)
+                return "", fmt.Errorf("failed to open PDF file: %v", err)
+        }</span>
+        // Note: pdf.Open doesn't return a file handle that needs to be closed in this library
+
+        // Extract plain text content from the PDF
+        <span class="cov0" title="0">b, err := r.GetPlainText()
+        if err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to extract text from PDF file", "error", err)
+                return "", fmt.Errorf("failed to extract text from PDF file: %v", err)
+        }</span>
+
+        // Read the extracted text into a string
+        <span class="cov0" title="0">var buf bytes.Buffer
+        buf.ReadFrom(b)
+        
+        return buf.String(), nil</span>
+}
+
+// extractDOCContent extracts content from a DOC file
+func (ce *ContentExtractor) extractDOCContent(filePath string) (string, error) <span class="cov0" title="0">{
+        // Open the DOC file
+        file, err := os.Open(filePath)
+        if err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to open DOC file", "error", err)
+                return "", fmt.Errorf("failed to open DOC file: %v", err)
+        }</span>
+        <span class="cov0" title="0">defer file.Close()
+
+        // Extract text content from the DOC file
+        textReader, err := doc2txt.ParseDoc(file)
+        if err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to extract text from DOC file", "error", err)
+                return "", fmt.Errorf("failed to extract text from DOC file: %v", err)
+        }</span>
+
+        // Read the text content
+        <span class="cov0" title="0">text, err := io.ReadAll(textReader)
+        if err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to read text from DOC file", "error", err)
+                return "", fmt.Errorf("failed to read text from DOC file: %v", err)
+        }</span>
+
+        <span class="cov0" title="0">return string(text), nil</span>
+}
+
+// extractDOCXContent extracts content from a DOCX file
+func (ce *ContentExtractor) extractDOCXContent(filePath string) (string, error) <span class="cov0" title="0">{
+        // Open the DOCX file
+        r, err := docx.ReadDocxFile(filePath)
+        if err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to open DOCX file", "error", err)
+                return "", fmt.Errorf("failed to open DOCX file: %v", err)
+        }</span>
+        <span class="cov0" title="0">defer r.Close()
+
+        // Get the content from the DOCX file
+        docxFile := r.Editable()
+        content := docxFile.GetContent()
+
+        return content, nil</span>
+}
+
+// extractGenericContent extracts generic content from a document
+func (ce *ContentExtractor) extractGenericContent(document *domain.Document) (string, error) <span class="cov0" title="0">{
+        // For unsupported file types, return basic file information
+        content := fmt.Sprintf("File: %s\nSize: %d bytes\nMIME Type: %s\n", 
+                document.Title, document.FileSize, document.MimeType)
+        
+        return content, nil
+}</pre>
+		
+		<pre class="file" id="file11" style="display: none">package service
+
+import (
+        "context"
+        "errors"
+        "time"
+
+        "cdk-office/internal/document/domain"
+        "cdk-office/internal/shared/cache"
+        "cdk-office/internal/shared/database"
+        "cdk-office/internal/shared/utils"
+        "cdk-office/pkg/logger"
+        "gorm.io/gorm"
+)
+
+// DocumentServiceInterface defines the interface for document service
+type DocumentServiceInterface interface {
+        Upload(ctx context.Context, req *UploadRequest) (*domain.Document, error)
+        GetDocument(ctx context.Context, docID string) (*domain.Document, error)
+        UpdateDocument(ctx context.Context, docID string, req *UpdateRequest) error
+        DeleteDocument(ctx context.Context, docID string) error
+        GetDocumentVersions(ctx context.Context, docID string) ([]*domain.DocumentVersion, error)
+}
+
+// DocumentService implements the DocumentServiceInterface
+type DocumentService struct {
+        db *gorm.DB
+}
+
+// NewDocumentService creates a new instance of DocumentService
+func NewDocumentService() *DocumentService <span class="cov0" title="0">{
+        return &amp;DocumentService{
+                db: database.GetDB(),
+        }
+}</span>
+
+// NewDocumentServiceWithDB creates a new instance of DocumentService with a specific database connection
+func NewDocumentServiceWithDB(db *gorm.DB) *DocumentService <span class="cov0" title="0">{
+        return &amp;DocumentService{
+                db: db,
+        }
+}</span>
+
+// UploadRequest represents the request for uploading a document
+type UploadRequest struct {
+        Title       string `json:"title" binding:"required"`
+        Description string `json:"description"`
+        FilePath    string `json:"file_path" binding:"required"`
+        FileSize    int64  `json:"file_size" binding:"required"`
+        MimeType    string `json:"mime_type" binding:"required"`
+        OwnerID     string `json:"owner_id" binding:"required"`
+        TeamID      string `json:"team_id" binding:"required"`
+        Tags        string `json:"tags"`
+}
+
+// UpdateRequest represents the request for updating a document
+type UpdateRequest struct {
+        Title       string `json:"title"`
+        Description string `json:"description"`
+        Status      string `json:"status"`
+        Tags        string `json:"tags"`
+}
+
+// Upload uploads a new document
+func (s *DocumentService) Upload(ctx context.Context, req *UploadRequest) (*domain.Document, error) <span class="cov8" title="1">{
+        // Create new document
+        document := &amp;domain.Document{
+                ID:          utils.GenerateDocumentID(),
+                Title:       req.Title,
+                Description: req.Description,
+                FilePath:    req.FilePath,
+                FileSize:    req.FileSize,
+                MimeType:    req.MimeType,
+                OwnerID:     req.OwnerID,
+                TeamID:      req.TeamID,
+                Status:      "active",
+                Tags:        req.Tags,
+                CreatedAt:   time.Now(),
+                UpdatedAt:   time.Now(),
+        }
+
+        // Save document to database
+        if err := s.db.Create(document).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to create document", "error", err)
+                return nil, errors.New("failed to upload document")
+        }</span>
+
+        // Create first version of the document
+        <span class="cov8" title="1">version := &amp;domain.DocumentVersion{
+                ID:         utils.GenerateDocumentVersionID(),
+                DocumentID: document.ID,
+                Version:    1,
+                FilePath:   req.FilePath,
+                FileSize:   req.FileSize,
+                CreatedAt:  time.Now(),
+        }
+
+        if err := s.db.Create(version).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to create document version", "error", err)
+                // Rollback document creation
+                s.db.Delete(document)
+                return nil, errors.New("failed to upload document")
+        }</span>
+
+        <span class="cov8" title="1">return document, nil</span>
+}
+
+// GetDocument retrieves a document by ID
+func (s *DocumentService) GetDocument(ctx context.Context, docID string) (*domain.Document, error) <span class="cov0" title="0">{
+        // Try to get document from cache first
+        cacheKey := "document:" + docID
+        var document domain.Document
+        
+        // Check if document exists in cache
+        exists, err := cache.Exists(cacheKey)
+        if err == nil &amp;&amp; exists </span><span class="cov0" title="0">{
+                // Get document from cache
+                if err := cache.Get(cacheKey, &amp;document); err == nil </span><span class="cov0" title="0">{
+                        return &amp;document, nil
+                }</span>
+        }
+
+        // Get document from database
+        <span class="cov0" title="0">if err := s.db.Where("id = ?", docID).First(&amp;document).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, errors.New("document not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find document", "error", err)
+                return nil, errors.New("failed to get document")</span>
+        }
+
+        // Cache the document for 10 minutes
+        <span class="cov0" title="0">cache.Set(cacheKey, &amp;document, 10*time.Minute)
+
+        return &amp;document, nil</span>
+}
+
+// UpdateDocument updates a document
+func (s *DocumentService) UpdateDocument(ctx context.Context, docID string, req *UpdateRequest) error <span class="cov8" title="1">{
+        // Find document by ID
+        var document domain.Document
+        if err := s.db.Where("id = ?", docID).First(&amp;document).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errors.New("document not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find document", "error", err)
+                return errors.New("failed to update document")</span>
+        }
+
+        // Update document fields
+        <span class="cov8" title="1">if req.Title != "" </span><span class="cov8" title="1">{
+                document.Title = req.Title
+        }</span>
+        <span class="cov8" title="1">if req.Description != "" </span><span class="cov0" title="0">{
+                document.Description = req.Description
+        }</span>
+        <span class="cov8" title="1">if req.Status != "" </span><span class="cov0" title="0">{
+                document.Status = req.Status
+        }</span>
+        <span class="cov8" title="1">if req.Tags != "" </span><span class="cov0" title="0">{
+                document.Tags = req.Tags
+        }</span>
+        <span class="cov8" title="1">document.UpdatedAt = time.Now()
+
+        // Save updated document to database
+        if err := s.db.Save(&amp;document).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to update document", "error", err)
+                return errors.New("failed to update document")
+        }</span>
+
+        // Invalidate cache
+        <span class="cov8" title="1">cacheKey := "document:" + docID
+        cache.Delete(cacheKey)
+
+        return nil</span>
+}
+
+// DeleteDocument deletes a document
+func (s *DocumentService) DeleteDocument(ctx context.Context, docID string) error <span class="cov8" title="1">{
+        // Find document by ID
+        var document domain.Document
+        if err := s.db.Where("id = ?", docID).First(&amp;document).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errors.New("document not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find document", "error", err)
+                return errors.New("failed to delete document")</span>
+        }
+
+        // Delete document from database
+        <span class="cov8" title="1">if err := s.db.Delete(&amp;document).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to delete document", "error", err)
+                return errors.New("failed to delete document")
+        }</span>
+
+        // Delete all versions of the document
+        <span class="cov8" title="1">if err := s.db.Where("document_id = ?", docID).Delete(&amp;domain.DocumentVersion{}).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to delete document versions", "error", err)
+                // Note: In a real application, you might want to handle this error more gracefully
+                // For now, we'll just log it and continue
+        }</span>
+
+        // Invalidate cache
+        <span class="cov8" title="1">cacheKey := "document:" + docID
+        cache.Delete(cacheKey)
+
+        return nil</span>
+}
+
+// GetDocumentVersions retrieves all versions of a document
+func (s *DocumentService) GetDocumentVersions(ctx context.Context, docID string) ([]*domain.DocumentVersion, error) <span class="cov0" title="0">{
+        // Check if document exists
+        var document domain.Document
+        if err := s.db.Where("id = ?", docID).First(&amp;document).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, errors.New("document not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find document", "error", err)
+                return nil, errors.New("failed to get document versions")</span>
+        }
+
+        // Try to get document versions from cache first
+        <span class="cov0" title="0">cacheKey := "document_versions:" + docID
+        var versions []*domain.DocumentVersion
+        
+        // Check if document versions exist in cache
+        exists, err := cache.Exists(cacheKey)
+        if err == nil &amp;&amp; exists </span><span class="cov0" title="0">{
+                // Get document versions from cache
+                if err := cache.Get(cacheKey, &amp;versions); err == nil </span><span class="cov0" title="0">{
+                        return versions, nil
+                }</span>
+        }
+
+        // Get document versions from database
+        <span class="cov0" title="0">if err := s.db.Where("document_id = ?", docID).Order("version asc").Find(&amp;versions).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to find document versions", "error", err)
+                return nil, errors.New("failed to get document versions")
+        }</span>
+
+        // Cache the document versions for 10 minutes
+        <span class="cov0" title="0">cache.Set(cacheKey, &amp;versions, 10*time.Minute)
+
+        return versions, nil</span>
+}</pre>
+		
+		<pre class="file" id="file12" style="display: none">package service
+
+import (
+        "cdk-office/internal/document/domain"
+        "cdk-office/internal/dify/client"
+        "cdk-office/pkg/logger"
+        "context"
+        "fmt"
+)
+
+// KnowledgeBaseInterface defines the interface for knowledge base service
+type KnowledgeBaseInterface interface {
+        AddToKnowledgeBase(ctx context.Context, document *domain.Document, content string) error
+}
+
+// KnowledgeBase implements the KnowledgeBaseInterface
+type KnowledgeBase struct {
+        difyClient client.DifyClientInterface
+}
+
+// NewKnowledgeBase creates a new instance of KnowledgeBase
+func NewKnowledgeBase(difyClient client.DifyClientInterface) *KnowledgeBase <span class="cov0" title="0">{
+        return &amp;KnowledgeBase{
+                difyClient: difyClient,
+        }
+}</span>
+
+// AddToKnowledgeBase adds a document to the Dify knowledge base
+func (kb *KnowledgeBase) AddToKnowledgeBase(ctx context.Context, document *domain.Document, content string) error <span class="cov0" title="0">{
+        // Prepare the knowledge base entry
+        _ = fmt.Sprintf("Title: %s\nContent: %s\nTags: %s\nSummary: %s", 
+                document.Title, content, document.Tags, document.Description)
+
+        // In a real implementation, you would use the Dify API to add the document to the knowledge base
+        // For now, we'll just log that this step would happen
+        logger.Error("would add document to knowledge base", "document_id", document.ID, "title", document.Title)
+        
+        // If there was a Dify API for adding to knowledge base, it might look something like this:
+        /*
+        req := &amp;client.KnowledgeBaseRequest{
+                DocumentID: document.ID,
+                Title:      document.Title,
+                Content:    entry,
+        }
+        
+        _, err := kb.difyClient.AddToKnowledgeBase(ctx, req)
+        if err != nil {
+                logger.Error("failed to add document to knowledge base", "error", err)
+                return fmt.Errorf("failed to add document to knowledge base: %v", err)
+        }
+        */
+        
+        return nil
+}</pre>
+		
+		<pre class="file" id="file13" style="display: none">package service
+
+import (
+        "cdk-office/internal/document/domain"
+        "cdk-office/pkg/logger"
+        "encoding/json"
+        "fmt"
+        "os"
+        "os/exec"
+        "path/filepath"
+        "strings"
+)
+
+// OCRExtractorInterface defines the interface for OCR extraction service
+type OCRExtractorInterface interface {
+        ExtractOCRContent(document *domain.Document) (string, error)
+}
+
+// OCRExtractor implements the OCRExtractorInterface
+type OCRExtractor struct {
+        storagePath string
+}
+
+// NewOCRExtractor creates a new instance of OCRExtractor
+func NewOCRExtractor(storagePath string) *OCRExtractor <span class="cov0" title="0">{
+        return &amp;OCRExtractor{
+                storagePath: storagePath,
+        }
+}</span>
+
+// ExtractOCRContent extracts content from a document using OCR
+func (oe *OCRExtractor) ExtractOCRContent(document *domain.Document) (string, error) <span class="cov0" title="0">{
+        // Determine file path
+        filePath := document.FilePath
+        if !filepath.IsAbs(filePath) </span><span class="cov0" title="0">{
+                filePath = filepath.Join(oe.storagePath, filePath)
+        }</span>
+
+        // Check if file exists
+        <span class="cov0" title="0">if _, err := os.Stat(filePath); os.IsNotExist(err) </span><span class="cov0" title="0">{
+                logger.Error("file not found", "file_path", filePath)
+                return "", fmt.Errorf("file not found: %s", filePath)
+        }</span>
+
+        // Extract OCR content based on file type
+        <span class="cov0" title="0">switch strings.ToLower(document.MimeType) </span>{
+        case "image/jpeg", "image/jpg", "image/png", "image/gif", "image/tiff", "image/bmp":<span class="cov0" title="0">
+                return oe.extractImageOCRContent(filePath)</span>
+        case "application/pdf":<span class="cov0" title="0">
+                return oe.extractPDFWithImageOCRContent(filePath)</span>
+        default:<span class="cov0" title="0">
+                // OCR is not applicable for non-image files
+                return "", fmt.Errorf("OCR not applicable for file type: %s", document.MimeType)</span>
+        }
+}
+
+// extractImageOCRContent extracts text from an image file using OCR
+func (oe *OCRExtractor) extractImageOCRContent(filePath string) (string, error) <span class="cov0" title="0">{
+        // Call the Python script to perform OCR using dots.ocr
+        // The Python script is located in the same directory as this file.
+        pythonScript := filepath.Join(filepath.Dir(filePath), "dots_ocr.py")
+        
+        // Check if the Python script exists
+        if _, err := os.Stat(pythonScript); os.IsNotExist(err) </span><span class="cov0" title="0">{
+                logger.Error("Python OCR script not found", "script", pythonScript)
+                return "", fmt.Errorf("Python OCR script not found: %s", pythonScript)
+        }</span>
+        
+        // Execute the Python script
+        <span class="cov0" title="0">cmd := exec.Command("python3", pythonScript, "image", filePath)
+        output, err := cmd.Output()
+        if err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to execute Python OCR script", "error", err)
+                return "", fmt.Errorf("failed to execute Python OCR script: %v", err)
+        }</span>
+        
+        // Parse the JSON output from the Python script
+        <span class="cov0" title="0">var result map[string]interface{}
+        if err := json.Unmarshal(output, &amp;result); err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to parse OCR result", "error", err)
+                return "", fmt.Errorf("failed to parse OCR result: %v", err)
+        }</span>
+        
+        // Check if there was an error in the OCR process
+        <span class="cov0" title="0">if errorMsg, ok := result["error"]; ok </span><span class="cov0" title="0">{
+                logger.Error("OCR process failed", "error", errorMsg)
+                return "", fmt.Errorf("OCR process failed: %v", errorMsg)
+        }</span>
+        
+        // Extract the text from the result
+        <span class="cov0" title="0">if text, ok := result["text"].(string); ok </span><span class="cov0" title="0">{
+                return text, nil
+        }</span>
+        
+        <span class="cov0" title="0">logger.Error("OCR result does not contain text", "result", result)
+        return "", fmt.Errorf("OCR result does not contain text")</span>
+}
+
+// extractPDFWithImageOCRContent extracts text from a PDF file using OCR
+func (oe *OCRExtractor) extractPDFWithImageOCRContent(filePath string) (string, error) <span class="cov0" title="0">{
+        // Call the Python script to perform OCR using dots.ocr.
+        // The Python script is located in the same directory as this file.
+        pythonScript := filepath.Join(filepath.Dir(filePath), "dots_ocr.py")
+        
+        // Check if the Python script exists
+        if _, err := os.Stat(pythonScript); os.IsNotExist(err) </span><span class="cov0" title="0">{
+                logger.Error("Python OCR script not found", "script", pythonScript)
+                return "", fmt.Errorf("Python OCR script not found: %s", pythonScript)
+        }</span>
+        
+        // Execute the Python script
+        <span class="cov0" title="0">cmd := exec.Command("python3", pythonScript, "pdf", filePath)
+        output, err := cmd.Output()
+        if err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to execute Python OCR script for PDF", "error", err)
+                return "", fmt.Errorf("failed to execute Python OCR script for PDF: %v", err)
+        }</span>
+        
+        // Parse the JSON output from the Python script
+        <span class="cov0" title="0">var result map[string]interface{}
+        if err := json.Unmarshal(output, &amp;result); err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to parse PDF OCR result", "error", err)
+                return "", fmt.Errorf("failed to parse PDF OCR result: %v", err)
+        }</span>
+        
+        // Check if there was an error in the OCR process
+        <span class="cov0" title="0">if errorMsg, ok := result["error"]; ok </span><span class="cov0" title="0">{
+                logger.Error("PDF OCR process failed", "error", errorMsg)
+                return "", fmt.Errorf("PDF OCR process failed: %v", errorMsg)
+        }</span>
+        
+        // Extract the text from the result
+        // For PDFs, we concatenate text from all pages
+        <span class="cov0" title="0">if pages, ok := result["pages"].([]interface{}); ok </span><span class="cov0" title="0">{
+                var fullText string
+                for _, page := range pages </span><span class="cov0" title="0">{
+                        if pageMap, ok := page.(map[string]interface{}); ok </span><span class="cov0" title="0">{
+                                if text, ok := pageMap["text"].(string); ok </span><span class="cov0" title="0">{
+                                        fullText += text + "\n"
+                                }</span>
+                        }
+                }
+                <span class="cov0" title="0">return fullText, nil</span>
+        }
+        
+        <span class="cov0" title="0">logger.Error("PDF OCR result does not contain pages", "result", result)
+        return "", fmt.Errorf("PDF OCR result does not contain pages")</span>
+}</pre>
+		
+		<pre class="file" id="file14" style="display: none">package service
+
+import (
+        "context"
+        "errors"
+        "strings"
+
+        "cdk-office/internal/document/domain"
+        "cdk-office/internal/shared/database"
+        "cdk-office/pkg/logger"
+        "gorm.io/gorm"
+)
+
+// SearchServiceInterface defines the interface for document search service
+type SearchServiceInterface interface {
+        SearchDocuments(ctx context.Context, query string, teamID string, page, size int) ([]*domain.Document, int64, error)
+}
+
+// SearchService implements the SearchServiceInterface
+type SearchService struct {
+        db *gorm.DB
+}
+
+// NewSearchService creates a new instance of SearchService
+func NewSearchService() *SearchService <span class="cov0" title="0">{
+        return &amp;SearchService{
+                db: database.GetDB(),
+        }
+}</span>
+
+// SearchDocuments searches for documents based on a query
+func (s *SearchService) SearchDocuments(ctx context.Context, query string, teamID string, page, size int) ([]*domain.Document, int64, error) <span class="cov0" title="0">{
+        // Validate pagination parameters
+        if page &lt; 1 </span><span class="cov0" title="0">{
+                page = 1
+        }</span>
+        <span class="cov0" title="0">if size &lt; 1 || size &gt; 100 </span><span class="cov0" title="0">{
+                size = 10
+        }</span>
+
+        // Build the query
+        <span class="cov0" title="0">dbQuery := s.db.Model(&amp;domain.Document{})
+
+        // Add team filter if provided
+        if teamID != "" </span><span class="cov0" title="0">{
+                dbQuery = dbQuery.Where("team_id = ?", teamID)
+        }</span>
+
+        // Add search conditions if query is provided
+        <span class="cov0" title="0">if query != "" </span><span class="cov0" title="0">{
+                // Split query into terms
+                terms := strings.Fields(query)
+                
+                // Build search conditions
+                for _, term := range terms </span><span class="cov0" title="0">{
+                        // Escape special characters in term
+                        escapedTerm := strings.ReplaceAll(term, "%", "\\%")
+                        escapedTerm = strings.ReplaceAll(escapedTerm, "_", "\\_")
+                        
+                        // Add search condition for title, description, and tags
+                        dbQuery = dbQuery.Where(
+                                "title ILIKE ? OR description ILIKE ? OR tags ILIKE ?",
+                                "%"+escapedTerm+"%",
+                                "%"+escapedTerm+"%",
+                                "%"+escapedTerm+"%",
+                        )
+                }</span>
+        }
+
+        // Count total results
+        <span class="cov0" title="0">var total int64
+        if err := dbQuery.Count(&amp;total).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to count search results", "error", err)
+                return nil, 0, errors.New("failed to search documents")
+        }</span>
+
+        // Apply pagination
+        <span class="cov0" title="0">offset := (page - 1) * size
+        dbQuery = dbQuery.Offset(offset).Limit(size)
+
+        // Execute query
+        var documents []*domain.Document
+        if err := dbQuery.Find(&amp;documents).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to search documents", "error", err)
+                return nil, 0, errors.New("failed to search documents")
+        }</span>
+
+        <span class="cov0" title="0">return documents, total, nil</span>
+}</pre>
+		
+		<pre class="file" id="file15" style="display: none">package service
+
+import (
+        "context"
+        "errors"
+        "fmt"
+        "io"
+        "mime/multipart"
+        "os"
+        "path/filepath"
+        "time"
+
+        "cdk-office/pkg/logger"
+)
+
+// StorageServiceInterface defines the interface for storage service
+type StorageServiceInterface interface {
+        SaveFile(ctx context.Context, file multipart.File, header *multipart.FileHeader, userID string) (string, error)
+        DeleteFile(ctx context.Context, filePath string) error
+        GetFile(ctx context.Context, filePath string) (io.ReadCloser, error)
+}
+
+// StorageService implements the StorageServiceInterface
+type StorageService struct {
+        storagePath string
+}
+
+// NewStorageService creates a new instance of StorageService
+func NewStorageService() *StorageService <span class="cov0" title="0">{
+        // In a real application, this path would be configurable
+        storagePath := "/var/cdk-office/storage"
+        
+        // Create storage directory if it doesn't exist
+        if err := os.MkdirAll(storagePath, 0755); err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to create storage directory", "error", err)
+                // In a real application, you might want to handle this error more gracefully
+                // For now, we'll just log it and continue with a fallback path
+                storagePath = "./storage"
+                os.MkdirAll(storagePath, 0755)
+        }</span>
+        
+        <span class="cov0" title="0">return &amp;StorageService{
+                storagePath: storagePath,
+        }</span>
+}
+
+// SaveFile saves a file to the storage system
+func (s *StorageService) SaveFile(ctx context.Context, file multipart.File, header *multipart.FileHeader, userID string) (string, error) <span class="cov0" title="0">{
+        // Generate a unique file name
+        fileName := fmt.Sprintf("%s_%s%s", 
+                userID, 
+                time.Now().Format("20060102150405"), 
+                filepath.Ext(header.Filename))
+        
+        // Create user directory if it doesn't exist
+        userDir := filepath.Join(s.storagePath, userID)
+        if err := os.MkdirAll(userDir, 0755); err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to create user directory", "error", err)
+                return "", errors.New("failed to save file")
+        }</span>
+        
+        // Create file path
+        <span class="cov0" title="0">filePath := filepath.Join(userDir, fileName)
+        
+        // Create the file
+        dst, err := os.Create(filePath)
+        if err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to create file", "error", err)
+                return "", errors.New("failed to save file")
+        }</span>
+        <span class="cov0" title="0">defer dst.Close()
+        
+        // Copy file content
+        if _, err := io.Copy(dst, file); err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to copy file content", "error", err)
+                return "", errors.New("failed to save file")
+        }</span>
+        
+        <span class="cov0" title="0">return filePath, nil</span>
+}
+
+// DeleteFile deletes a file from the storage system
+func (s *StorageService) DeleteFile(ctx context.Context, filePath string) error <span class="cov0" title="0">{
+        // Check if file exists
+        if _, err := os.Stat(filePath); os.IsNotExist(err) </span><span class="cov0" title="0">{
+                return errors.New("file not found")
+        }</span>
+        
+        // Delete the file
+        <span class="cov0" title="0">if err := os.Remove(filePath); err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to delete file", "error", err)
+                return errors.New("failed to delete file")
+        }</span>
+        
+        <span class="cov0" title="0">return nil</span>
+}
+
+// GetFile retrieves a file from the storage system
+func (s *StorageService) GetFile(ctx context.Context, filePath string) (io.ReadCloser, error) <span class="cov0" title="0">{
+        // Check if file exists
+        if _, err := os.Stat(filePath); os.IsNotExist(err) </span><span class="cov0" title="0">{
+                return nil, errors.New("file not found")
+        }</span>
+        
+        // Open the file
+        <span class="cov0" title="0">file, err := os.Open(filePath)
+        if err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to open file", "error", err)
+                return nil, errors.New("failed to get file")
+        }</span>
+        
+        <span class="cov0" title="0">return file, nil</span>
+}</pre>
+		
+		<pre class="file" id="file16" style="display: none">package service
+
+import (
+        "cdk-office/internal/document/domain"
+        "cdk-office/internal/dify/client"
+        "cdk-office/pkg/logger"
+        "context"
+        "fmt"
+)
+
+// SummarizerInterface defines the interface for document summarization service
+type SummarizerInterface interface {
+        SummarizeDocument(ctx context.Context, content string, document *domain.Document) (string, error)
+}
+
+// Summarizer implements the SummarizerInterface
+type Summarizer struct {
+        difyClient client.DifyClientInterface
+}
+
+// NewSummarizer creates a new instance of Summarizer
+func NewSummarizer(difyClient client.DifyClientInterface) *Summarizer <span class="cov0" title="0">{
+        return &amp;Summarizer{
+                difyClient: difyClient,
+        }
+}</span>
+
+// SummarizeDocument generates a summary of the document content using Dify AI
+func (s *Summarizer) SummarizeDocument(ctx context.Context, content string, document *domain.Document) (string, error) <span class="cov0" title="0">{
+        // Prepare the summarization prompt
+        prompt := fmt.Sprintf("Please generate a concise summary of the following document content. The summary should be no more than 200 words.\n\nDocument title: %s\n\nDocument content:\n%s", document.Title, content)
+
+        // Create completion request
+        req := &amp;client.CompletionRequest{
+                Query:        prompt,
+                ResponseMode: "blocking",
+                User:         document.OwnerID,
+        }
+
+        // Send request to Dify
+        resp, err := s.difyClient.CreateCompletionMessage(ctx, req)
+        if err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to summarize document with Dify", "error", err)
+                return "", fmt.Errorf("failed to summarize document: %v", err)
+        }</span>
+
+        // Return the summary
+        <span class="cov0" title="0">return resp.Answer, nil</span>
+}</pre>
+		
+		<pre class="file" id="file17" style="display: none">package service
+
+import (
+        "cdk-office/internal/document/domain"
+        "cdk-office/internal/dify/client"
+        "cdk-office/pkg/logger"
+        "context"
+        "encoding/json"
+        "fmt"
+)
+
+// TagExtractorInterface defines the interface for tag extraction service
+type TagExtractorInterface interface {
+        ExtractTags(ctx context.Context, content string, document *domain.Document) ([]string, error)
+}
+
+// TagExtractor implements the TagExtractorInterface
+type TagExtractor struct {
+        difyClient client.DifyClientInterface
+}
+
+// NewTagExtractor creates a new instance of TagExtractor
+func NewTagExtractor(difyClient client.DifyClientInterface) *TagExtractor <span class="cov0" title="0">{
+        return &amp;TagExtractor{
+                difyClient: difyClient,
+        }
+}</span>
+
+// ExtractTags extracts tags from document content using Dify AI
+func (te *TagExtractor) ExtractTags(ctx context.Context, content string, document *domain.Document) ([]string, error) <span class="cov0" title="0">{
+        // Prepare the tag extraction prompt
+        prompt := fmt.Sprintf("Please extract relevant tags from the following document content. Return the tags as a JSON array of strings.\n\nDocument title: %s\n\nDocument content:\n%s", document.Title, content)
+
+        // Create completion request
+        req := &amp;client.CompletionRequest{
+                Query:        prompt,
+                ResponseMode: "blocking",
+                User:         document.OwnerID,
+        }
+
+        // Send request to Dify
+        resp, err := te.difyClient.CreateCompletionMessage(ctx, req)
+        if err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to extract tags with Dify", "error", err)
+                return nil, fmt.Errorf("failed to extract tags: %v", err)
+        }</span>
+
+        // Parse the tags from the response
+        <span class="cov0" title="0">var tags []string
+        if err := json.Unmarshal([]byte(resp.Answer), &amp;tags); err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to parse tags from Dify response", "error", err, "response", resp.Answer)
+                // Return a fallback set of tags
+                return []string{"document", "ai_processed"}, nil
+        }</span>
+
+        <span class="cov0" title="0">return tags, nil</span>
+}</pre>
+		
+		<pre class="file" id="file18" style="display: none">package service
+
+import (
+        "context"
+        "errors"
+        "time"
+
+        "cdk-office/internal/document/domain"
+        "cdk-office/internal/shared/database"
+        "cdk-office/pkg/logger"
+        "gorm.io/gorm"
+)
+
+// VersionServiceInterface defines the interface for document version service
+type VersionServiceInterface interface {
+        CreateVersion(ctx context.Context, documentID, filePath string, fileSize int64) (*domain.DocumentVersion, error)
+        GetVersion(ctx context.Context, versionID string) (*domain.DocumentVersion, error)
+        ListVersions(ctx context.Context, documentID string) ([]*domain.DocumentVersion, error)
+        GetLatestVersion(ctx context.Context, documentID string) (*domain.DocumentVersion, error)
+        RestoreVersion(ctx context.Context, versionID string) error
+}
+
+// VersionService implements the VersionServiceInterface
+type VersionService struct {
+        db *gorm.DB
+}
+
+// NewVersionService creates a new instance of VersionService
+func NewVersionService() *VersionService <span class="cov0" title="0">{
+        return &amp;VersionService{
+                db: database.GetDB(),
+        }
+}</span>
+
+// CreateVersion creates a new version of a document
+func (s *VersionService) CreateVersion(ctx context.Context, documentID, filePath string, fileSize int64) (*domain.DocumentVersion, error) <span class="cov0" title="0">{
+        // Check if document exists
+        var document domain.Document
+        if err := s.db.Where("id = ?", documentID).First(&amp;document).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, errors.New("document not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find document", "error", err)
+                return nil, errors.New("failed to create version")</span>
+        }
+
+        // Get the latest version number for this document
+        <span class="cov0" title="0">var latestVersion domain.DocumentVersion
+        var versionNumber int
+        if err := s.db.Where("document_id = ?", documentID).Order("version desc").First(&amp;latestVersion).Error; err != nil </span><span class="cov0" title="0">{
+                if !errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        logger.Error("failed to find latest version", "error", err)
+                        return nil, errors.New("failed to create version")
+                }</span>
+                // If no previous version, start with version 1
+                <span class="cov0" title="0">versionNumber = 1</span>
+        } else<span class="cov0" title="0"> {
+                // Increment version number
+                versionNumber = latestVersion.Version + 1
+        }</span>
+
+        // Create new version
+        <span class="cov0" title="0">version := &amp;domain.DocumentVersion{
+                ID:         generateID(),
+                DocumentID: documentID,
+                Version:    versionNumber,
+                FilePath:   filePath,
+                FileSize:   fileSize,
+                CreatedAt:  time.Now(),
+        }
+
+        // Save version to database
+        if err := s.db.Create(version).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to create version", "error", err)
+                return nil, errors.New("failed to create version")
+        }</span>
+
+        <span class="cov0" title="0">return version, nil</span>
+}
+
+// GetVersion retrieves a specific version of a document
+func (s *VersionService) GetVersion(ctx context.Context, versionID string) (*domain.DocumentVersion, error) <span class="cov0" title="0">{
+        var version domain.DocumentVersion
+        if err := s.db.Where("id = ?", versionID).First(&amp;version).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, errors.New("version not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find version", "error", err)
+                return nil, errors.New("failed to get version")</span>
+        }
+
+        <span class="cov0" title="0">return &amp;version, nil</span>
+}
+
+// ListVersions lists all versions of a document
+func (s *VersionService) ListVersions(ctx context.Context, documentID string) ([]*domain.DocumentVersion, error) <span class="cov0" title="0">{
+        // Check if document exists
+        var document domain.Document
+        if err := s.db.Where("id = ?", documentID).First(&amp;document).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, errors.New("document not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find document", "error", err)
+                return nil, errors.New("failed to list versions")</span>
+        }
+
+        // Get all versions for this document
+        <span class="cov0" title="0">var versions []*domain.DocumentVersion
+        if err := s.db.Where("document_id = ?", documentID).Order("version asc").Find(&amp;versions).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to find versions", "error", err)
+                return nil, errors.New("failed to list versions")
+        }</span>
+
+        <span class="cov0" title="0">return versions, nil</span>
+}
+
+// GetLatestVersion retrieves the latest version of a document
+func (s *VersionService) GetLatestVersion(ctx context.Context, documentID string) (*domain.DocumentVersion, error) <span class="cov0" title="0">{
+        // Check if document exists
+        var document domain.Document
+        if err := s.db.Where("id = ?", documentID).First(&amp;document).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, errors.New("document not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find document", "error", err)
+                return nil, errors.New("failed to get latest version")</span>
+        }
+
+        // Get the latest version for this document
+        <span class="cov0" title="0">var version domain.DocumentVersion
+        if err := s.db.Where("document_id = ?", documentID).Order("version desc").First(&amp;version).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, errors.New("no versions found for document")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find latest version", "error", err)
+                return nil, errors.New("failed to get latest version")</span>
+        }
+
+        <span class="cov0" title="0">return &amp;version, nil</span>
+}
+
+// RestoreVersion restores a document to a specific version
+func (s *VersionService) RestoreVersion(ctx context.Context, versionID string) error <span class="cov0" title="0">{
+        // Get the version to restore
+        var version domain.DocumentVersion
+        if err := s.db.Where("id = ?", versionID).First(&amp;version).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errors.New("version not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find version", "error", err)
+                return errors.New("failed to restore version")</span>
+        }
+
+        // Get the document
+        <span class="cov0" title="0">var document domain.Document
+        if err := s.db.Where("id = ?", version.DocumentID).First(&amp;document).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errors.New("document not found")
+                }</span>
+                <span class="cov0" title="0">logger.Error("failed to find document", "error", err)
+                return errors.New("failed to restore version")</span>
+        }
+
+        // Update document with version details
+        <span class="cov0" title="0">document.FilePath = version.FilePath
+        document.FileSize = version.FileSize
+        document.UpdatedAt = time.Now()
+
+        // Save updated document to database
+        if err := s.db.Save(&amp;document).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to update document", "error", err)
+                return errors.New("failed to restore version")
+        }</span>
+
+        // Create a new version to record the restoration
+        // This creates a new version with the same content as the restored version
+        <span class="cov0" title="0">newVersion := &amp;domain.DocumentVersion{
+                ID:         generateID(),
+                DocumentID: document.ID,
+                Version:    version.Version + 1,
+                FilePath:   version.FilePath,
+                FileSize:   version.FileSize,
+                CreatedAt:  time.Now(),
+        }
+
+        if err := s.db.Create(newVersion).Error; err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to create new version after restoration", "error", err)
+                // Note: In a real application, you might want to handle this error more gracefully
+                // For now, we'll just log it and continue
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

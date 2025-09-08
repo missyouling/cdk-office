@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
+	"sync/atomic"
 	"time"
 
 	"cdk-office/internal/shared/database"
@@ -31,6 +33,13 @@ type DataCollectionService struct {
 func NewDataCollectionService() *DataCollectionService {
 	return &DataCollectionService{
 		db: database.GetDB(),
+	}
+}
+
+// NewDataCollectionServiceWithDB creates a new instance of DataCollectionService with a specific database connection
+func NewDataCollectionServiceWithDB(db *gorm.DB) *DataCollectionService {
+	return &DataCollectionService{
+		db: db,
 	}
 }
 
@@ -82,6 +91,10 @@ type DataCollectionEntry struct {
 	CreatedBy   string    `json:"created_by"`
 	CreatedAt   time.Time `json:"created_at"`
 }
+
+// Counter for generating unique IDs in tests
+var collectionIDCounter int64
+var entryIDCounter int64
 
 // CreateDataCollection creates a new data collection
 func (s *DataCollectionService) CreateDataCollection(ctx context.Context, req *CreateDataCollectionRequest) (*DataCollection, error) {
@@ -326,11 +339,15 @@ func (s *DataCollectionService) ExportDataEntries(ctx context.Context, collectio
 // generateCollectionID generates a unique collection ID
 func generateCollectionID() string {
 	// In a real application, use a proper ID generation library like uuid
-	return "collection_" + time.Now().Format("20060102150405")
+	// For testing, use a counter to ensure uniqueness
+	counter := atomic.AddInt64(&collectionIDCounter, 1)
+	return fmt.Sprintf("collection_%d_%s", counter, time.Now().Format("20060102150405"))
 }
 
 // generateEntryID generates a unique entry ID
 func generateEntryID() string {
 	// In a real application, use a proper ID generation library like uuid
-	return "entry_" + time.Now().Format("20060102150405")
+	// For testing, use a counter to ensure uniqueness
+	counter := atomic.AddInt64(&entryIDCounter, 1)
+	return fmt.Sprintf("entry_%d_%s", counter, time.Now().Format("20060102150405"))
 }

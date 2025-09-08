@@ -1,104 +1,45 @@
-# CDK-Office Makefile
+# Makefile for running tests
 
-# Go parameters
-GOCMD=go
-GOBUILD=$(GOCMD) build
-GOCLEAN=$(GOCMD) clean
-GOTEST=$(GOCMD) test
-GOGET=$(GOCMD) get
-GOMOD=$(GOCMD) mod
-GOVET=$(GOCMD) vet
-GOFMT=$(GOCMD) fmt
-
-# Binary name
-BINARY_NAME=cdk-office
-BINARY_UNIX=$(BINARY_NAME)_unix
-
-# Directories
-CMD_DIR=cmd/server
-INTERNAL_DIR=internal
-PKG_DIR=pkg
-FRONTEND_DIR=frontend
-
-# Test coverage
-COVERAGE_REPORT=coverage.out
-COVERAGE_HTML=coverage.html
-
-# Default target
-all: build
-
-# Build the application
-build:
-	$(GOBUILD) -o $(BINARY_NAME) -v $(CMD_DIR)/main.go
-
-# Build for Unix/Linux
-build-linux:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) -o $(BINARY_UNIX) -v $(CMD_DIR)/main.go
-
-# Install dependencies
-deps:
-	$(GOMOD) tidy
-	cd $(FRONTEND_DIR) && pnpm install
-
-# Run the application
-run:
-	$(GOBUILD) -o $(BINARY_NAME) -v $(CMD_DIR)/main.go
-	./$(BINARY_NAME)
-
-# Run tests
+# Test all modules
 test:
-	$(GOTEST) -v ./...
+	go test -v ./...
 
-# Run tests with coverage
+# Test app module
+test-app:
+	go test -v ./internal/app/service/test
+
+# Test document module
+test-document:
+	go test -v ./internal/document/service/test
+
+# Test employee module
+test-employee:
+	go test -v ./internal/employee/service/test
+
+# Test dify module
+test-dify:
+	go test -v ./internal/dify/workflow/test
+
+# Test with coverage
 test-coverage:
-	$(GOTEST) -coverprofile=$(COVERAGE_REPORT) ./...
-	$(GOCMD) tool cover -html=$(COVERAGE_REPORT) -o $(COVERAGE_HTML)
+	go test -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out -o coverage.html
 
-# Run tests with coverage and show in browser
-test-coverage-html:
-	$(GOTEST) -coverprofile=$(COVERAGE_REPORT) ./...
-	$(GOCMD) tool cover -html=$(COVERAGE_REPORT)
+# Test with coverage for specific modules
+test-app-coverage:
+	go test -coverprofile=app_coverage.out ./internal/app/service/test
+	go tool cover -html=app_coverage.out -o app_coverage.html
 
-# Vet the code
-vet:
-	$(GOVET) ./...
+test-document-coverage:
+	go test -coverprofile=document_coverage.out ./internal/document/service/test
+	go tool cover -html=document_coverage.out -o document_coverage.html
 
-# Format the code
-fmt:
-	$(GOFMT) ./...
+test-employee-coverage:
+	go test -coverprofile=employee_coverage.out ./internal/employee/service/test
+	go tool cover -html=employee_coverage.out -o employee_coverage.html
 
-# Clean build files
-clean:
-	$(GOCLEAN)
-	rm -f $(BINARY_NAME)
-	rm -f $(BINARY_UNIX)
-	rm -f $(COVERAGE_REPORT)
-	rm -f $(COVERAGE_HTML)
+test-dify-coverage:
+	go test -coverprofile=dify_coverage.out ./internal/dify/workflow/test
+	go tool cover -html=dify_coverage.out -o dify_coverage.html
 
-# Lint the code
-lint:
-	golangci-lint run
-
-# Install linter
-install-lint:
-	$(GOGET) github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-
-# Help
-help:
-	@echo "Available targets:"
-	@echo "  all               - Build the application (default)"
-	@echo "  build             - Build the application"
-	@echo "  build-linux       - Build for Unix/Linux"
-	@echo "  deps              - Install dependencies"
-	@echo "  run               - Run the application"
-	@echo "  test              - Run tests"
-	@echo "  test-coverage     - Run tests with coverage"
-	@echo "  test-coverage-html - Run tests with coverage and show in browser"
-	@echo "  vet               - Vet the code"
-	@echo "  fmt               - Format the code"
-	@echo "  clean             - Clean build files"
-	@echo "  lint              - Lint the code"
-	@echo "  install-lint      - Install linter"
-	@echo "  help              - Show this help"
-
-.PHONY: all build build-linux deps run test test-coverage test-coverage-html vet fmt clean lint install-lint help
+.PHONY: test test-app test-document test-employee test-dify test-coverage test-app-coverage test-document-coverage test-employee-coverage test-dify-coverage

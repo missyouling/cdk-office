@@ -34,6 +34,13 @@ func NewEmployeeService() *EmployeeService {
 	}
 }
 
+// NewEmployeeServiceWithDB creates a new instance of EmployeeService with a specific database connection
+func NewEmployeeServiceWithDB(db *gorm.DB) *EmployeeService {
+	return &EmployeeService{
+		db: db,
+	}
+}
+
 // CreateEmployeeRequest represents the request for creating an employee
 type CreateEmployeeRequest struct {
 	UserID     string    `json:"user_id" binding:"required"`
@@ -213,7 +220,7 @@ func (s *EmployeeService) ListEmployees(ctx context.Context, req *ListEmployeesR
 	if req.DeptID != "" {
 		cacheKey += ":dept_" + req.DeptID
 	}
-	cacheKey += ":page_" + string(rune(req.Page)) + ":size_" + string(rune(req.Size))
+	cacheKey += ":page_" + string(rune(req.Page)) + ":size_"
 
 	var employees []*domain.Employee
 	var total int64

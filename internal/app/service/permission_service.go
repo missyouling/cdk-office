@@ -37,6 +37,13 @@ func NewPermissionService() *PermissionService {
 	}
 }
 
+// NewPermissionServiceWithDB creates a new instance of PermissionService with a specific database connection
+func NewPermissionServiceWithDB(db *gorm.DB) *PermissionService {
+	return &PermissionService{
+		db: db,
+	}
+}
+
 // CreatePermissionRequest represents the request for creating a permission
 type CreatePermissionRequest struct {
 	AppID       string `json:"app_id" binding:"required"`

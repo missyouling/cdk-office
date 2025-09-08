@@ -30,6 +30,13 @@ func NewAppHandler() *AppHandler {
 	}
 }
 
+// NewAppHandlerWithService creates a new instance of AppHandler with a specific service
+func NewAppHandlerWithService(appService service.AppServiceInterface) *AppHandler {
+	return &AppHandler{
+		appService: appService,
+	}
+}
+
 // CreateApplicationRequest represents the request for creating an application
 type CreateApplicationRequest struct {
 	TeamID      string `json:"team_id" binding:"required"`

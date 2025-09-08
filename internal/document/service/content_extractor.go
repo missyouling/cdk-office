@@ -118,12 +118,12 @@ func (ce *ContentExtractor) extractHTMLContent(filePath string) (string, error) 
 // extractPDFContent extracts content from a PDF file
 func (ce *ContentExtractor) extractPDFContent(filePath string) (string, error) {
 	// Open the PDF file
-	file, r, err := pdf.Open(filePath)
+	r, err := pdf.Open(filePath)
 	if err != nil {
 		logger.Error("failed to open PDF file", "error", err)
 		return "", fmt.Errorf("failed to open PDF file: %v", err)
 	}
-	defer file.Close()
+	// Note: pdf.Open doesn't return a file handle that needs to be closed in this library
 
 	// Extract plain text content from the PDF
 	b, err := r.GetPlainText()
@@ -150,13 +150,20 @@ func (ce *ContentExtractor) extractDOCContent(filePath string) (string, error) {
 	defer file.Close()
 
 	// Extract text content from the DOC file
-	text, err := doc2txt.DocToText(file)
+	textReader, err := doc2txt.ParseDoc(file)
 	if err != nil {
 		logger.Error("failed to extract text from DOC file", "error", err)
 		return "", fmt.Errorf("failed to extract text from DOC file: %v", err)
 	}
 
-	return text, nil
+	// Read the text content
+	text, err := io.ReadAll(textReader)
+	if err != nil {
+		logger.Error("failed to read text from DOC file", "error", err)
+		return "", fmt.Errorf("failed to read text from DOC file: %v", err)
+	}
+
+	return string(text), nil
 }
 
 // extractDOCXContent extracts content from a DOCX file

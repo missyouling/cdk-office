@@ -234,7 +234,7 @@ func (s *QRCodeService) GenerateQRCodeImage(ctx context.Context, qrCodeID string
 	}
 
 	// Generate QR code image using the go-qrcode library
-	qr, err := qrcode.New(qrCode.Content, qrcode.High)
+	qr, err := qrcode.New(qrCode.Content, qrcode.Level(qrcode.High))
 	if err != nil {
 		logger.Error("failed to create QR code", "error", err)
 		return "", errors.New("failed to generate QR code image")
@@ -242,7 +242,7 @@ func (s *QRCodeService) GenerateQRCodeImage(ctx context.Context, qrCodeID string
 
 	// Save the QR code image to a file
 	imagePath := filepath.Join(imageDir, qrCode.ID+".png")
-	if err := qr.WriteFile(256, imagePath); err != nil {
+	if err := qr.WriteFile(imagePath); err != nil {
 		logger.Error("failed to save QR code image", "error", err)
 		return "", errors.New("failed to save QR code image")
 	}

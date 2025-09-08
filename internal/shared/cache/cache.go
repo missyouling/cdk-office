@@ -87,6 +87,10 @@ func (r *RedisCache) Exists(key string) (bool, error) {
 
 // Set stores a value in Redis with an expiration time (package function)
 func Set(key string, value interface{}, expiration time.Duration) error {
+	// If redisClient is nil, return nil (no-op)
+	if redisClient == nil {
+		return nil
+	}
 	data, err := json.Marshal(value)
 	if err != nil {
 		return err
@@ -97,6 +101,10 @@ func Set(key string, value interface{}, expiration time.Duration) error {
 
 // Get retrieves a value from Redis (package function)
 func Get(key string, dest interface{}) error {
+	// If redisClient is nil, return an error indicating key not found
+	if redisClient == nil {
+		return redis.Nil
+	}
 	data, err := redisClient.Get(ctx, key).Result()
 	if err != nil {
 		return err
@@ -111,11 +119,19 @@ func Get(key string, dest interface{}) error {
 
 // Delete removes a key from Redis (package function)
 func Delete(key string) error {
+	// If redisClient is nil, return nil (no-op)
+	if redisClient == nil {
+		return nil
+	}
 	return redisClient.Del(ctx, key).Err()
 }
 
 // Exists checks if a key exists in Redis (package function)
 func Exists(key string) (bool, error) {
+	// If redisClient is nil, return false (key does not exist)
+	if redisClient == nil {
+		return false, nil
+	}
 	result, err := redisClient.Exists(ctx, key).Result()
 	if err != nil {
 		return false, err

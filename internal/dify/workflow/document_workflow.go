@@ -143,8 +143,7 @@ func (w *DocumentWorkflow) addToKnowledgeBase(ctx context.Context, document *dom
 // updateDocumentWithAIResults updates the document with AI processing results
 func (w *DocumentWorkflow) updateDocumentWithAIResults(ctx context.Context, document *domain.Document, aiResult *AIResult) error {
 	// Update document with AI results
-	document.Description = aiResult.Summary
-	document.Category = aiResult.Classification
+	document.Description = aiResult.Summary + " [Category: " + aiResult.Classification + "]"
 
 	// Convert tags to JSON string
 	tagsJSON := "["

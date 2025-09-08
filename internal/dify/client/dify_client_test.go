@@ -1,11 +1,8 @@
-package service
+package client
 
 import (
 	"context"
 	"testing"
-	
-	"cdk-office/internal/dify/client"
-	"cdk-office/pkg/logger"
 	
 	"github.com/stretchr/testify/assert"
 )
@@ -13,16 +10,16 @@ import (
 // TestDifyClient tests the DifyClient
 func TestDifyClient(t *testing.T) {
 	// Set up test environment
-	logger.InitTestLogger()
+	// logger.InitTestLogger()
 	
 	// Create Dify client
-	difyClient := client.NewDifyClient("test_api_key", "http://localhost:8000")
+	difyClient := NewDifyClient("test_api_key", "http://localhost:8000")
 	
 	// Test CreateCompletionMessage
 	t.Run("CreateCompletionMessage", func(t *testing.T) {
 		// Prepare test data
 		ctx := context.Background()
-		req := &client.CompletionRequest{
+		req := &CompletionRequest{
 			Query:        "Hello, world!",
 			ResponseMode: "blocking",
 			User:         "test_user",
@@ -42,7 +39,7 @@ func TestDifyClient(t *testing.T) {
 	t.Run("CreateChatMessage", func(t *testing.T) {
 		// Prepare test data
 		ctx := context.Background()
-		req := &client.ChatRequest{
+		req := &ChatRequest{
 			Query:        "Hello, world!",
 			ResponseMode: "blocking",
 			User:         "test_user",

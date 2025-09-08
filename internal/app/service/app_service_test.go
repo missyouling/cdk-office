@@ -4,55 +4,33 @@ import (
 	"context"
 	"testing"
 	
-	"cdk-office/internal/app/domain"
-	"cdk-office/internal/shared/database"
-	"cdk-office/pkg/logger"
-	
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"gorm.io/gorm"
+	"cdk-office/internal/shared/testutils"
 )
-
-// MockDB is a mock database for testing
-type MockDB struct {
-	mock.Mock
-}
 
 // TestAppService tests the AppService
 func TestAppService(t *testing.T) {
 	// Set up test environment
-	logger.InitTestLogger()
+	// logger.InitTestLogger()
 	
-	// Create mock database
-	mockDB := &MockDB{}
+	// Initialize the database connection for testing
+	testDB := testutils.SetupTestDB()
 	
-	// Create app service with mock database
-	appService := &AppService{
-		db: mockDB,
-	}
+	// Create app service with database connection
+	appService := NewAppServiceWithDB(testDB)
 	
 	// Test CreateApplication
 	t.Run("CreateApplication", func(t *testing.T) {
 		// Prepare test data
 		ctx := context.Background()
 		req := &CreateApplicationRequest{
-			TeamID:    "team_123",
-			Name:      "Test App",
-			Type:      "web",
-			CreatedBy: "user_123",
+			TeamID:      "team_123",
+			Name:        "Test App",
+			Type:        "qrcode",
+			CreatedBy:   "user_123",
+			Description: "Test application description",
+			Config:      "{}",
 		}
-		
-		// Create expected result
-		expectedApp := &domain.Application{
-			ID:        "app_123",
-			TeamID:    "team_123",
-			Name:      "Test App",
-			Type:      "web",
-			CreatedBy: "user_123",
-		}
-		
-		// Set up mock expectations
-		// mockDB.On("Create", mock.AnythingOfType("*domain.Application")).Return(nil)
 		
 		// Call the method under test
 		app, err := appService.CreateApplication(ctx, req)
@@ -60,54 +38,53 @@ func TestAppService(t *testing.T) {
 		// Assert results
 		assert.NoError(t, err)
 		assert.NotNil(t, app)
-		// assert.Equal(t, expectedApp, app)
-		
-		// Assert mock expectations
-		// mockDB.AssertExpectations(t)
 	})
 	
 	// Test UpdateApplication
 	t.Run("UpdateApplication", func(t *testing.T) {
-		// Prepare test data
+		// First create an application to update
 		ctx := context.Background()
-		appID := "app_123"
-		req := &UpdateApplicationRequest{
+		createReq := &CreateApplicationRequest{
+			TeamID:      "team_123",
+			Name:        "Test App 2",
+			Type:        "qrcode",
+			CreatedBy:   "user_123",
+			Description: "Test application description",
+			Config:      "{}",
+		}
+		
+		app, err := appService.CreateApplication(ctx, createReq)
+		assert.NoError(t, err)
+		assert.NotNil(t, app)
+		
+		// Now update the application
+		updateReq := &UpdateApplicationRequest{
 			Name: "Updated App",
 		}
 		
-		// Set up mock expectations
-		// mockDB.On("Where", "id = ?", appID).Return(mockDB)
-		// mockDB.On("First", mock.AnythingOfType("*domain.Application")).Return(nil)
-		// mockDB.On("Save", mock.AnythingOfType("*domain.Application")).Return(nil)
-		
-		// Call the method under test
-		err := appService.UpdateApplication(ctx, appID, req)
-		
-		// Assert results
+		err = appService.UpdateApplication(ctx, app.ID, updateReq)
 		assert.NoError(t, err)
-		
-		// Assert mock expectations
-		// mockDB.AssertExpectations(t)
 	})
 	
 	// Test DeleteApplication
 	t.Run("DeleteApplication", func(t *testing.T) {
-		// Prepare test data
+		// First create an application to delete
 		ctx := context.Background()
-		appID := "app_123"
+		createReq := &CreateApplicationRequest{
+			TeamID:      "team_123",
+			Name:        "Test App 3",
+			Type:        "qrcode",
+			CreatedBy:   "user_123",
+			Description: "Test application description",
+			Config:      "{}",
+		}
 		
-		// Set up mock expectations
-		// mockDB.On("Where", "id = ?", appID).Return(mockDB)
-		// mockDB.On("First", mock.AnythingOfType("*domain.Application")).Return(nil)
-		// mockDB.On("Delete", mock.AnythingOfType("*domain.Application")).Return(nil)
-		
-		// Call the method under test
-		err := appService.DeleteApplication(ctx, appID)
-		
-		// Assert results
+		app, err := appService.CreateApplication(ctx, createReq)
 		assert.NoError(t, err)
+		assert.NotNil(t, app)
 		
-		// Assert mock expectations
-		// mockDB.AssertExpectations(t)
+		// Now delete the application
+		err = appService.DeleteApplication(ctx, app.ID)
+		assert.NoError(t, err)
 	})
 }

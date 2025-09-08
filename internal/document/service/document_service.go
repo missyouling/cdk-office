@@ -34,6 +34,13 @@ func NewDocumentService() *DocumentService {
 	}
 }
 
+// NewDocumentServiceWithDB creates a new instance of DocumentService with a specific database connection
+func NewDocumentServiceWithDB(db *gorm.DB) *DocumentService {
+	return &DocumentService{
+		db: db,
+	}
+}
+
 // UploadRequest represents the request for uploading a document
 type UploadRequest struct {
 	Title       string `json:"title" binding:"required"`

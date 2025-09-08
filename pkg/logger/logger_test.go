@@ -1,22 +1,8 @@
 package logger
 
 import (
-	"os"
 	"testing"
 )
-
-// InitTestLogger initializes the logger for testing
-func InitTestLogger() {
-	// In a real implementation, this would set up a test logger
-	// that writes to a buffer instead of files, so we can capture
-	// and verify log output in tests.
-	
-	// For now, we'll just ensure the logs directory exists
-	logDir := "logs"
-	if err := os.MkdirAll(logDir, 0755); err != nil {
-		panic("Failed to create logs directory: " + err.Error())
-	}
-}
 
 // TestLogger tests the logger functionality
 func TestLogger(t *testing.T) {

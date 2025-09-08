@@ -33,6 +33,13 @@ func NewAppService() *AppService {
 	}
 }
 
+// NewAppServiceWithDB creates a new instance of AppService with a specific database connection
+func NewAppServiceWithDB(db *gorm.DB) *AppService {
+	return &AppService{
+		db: db,
+	}
+}
+
 // CreateApplicationRequest represents the request for creating an application
 type CreateApplicationRequest struct {
 	TeamID      string `json:"team_id" binding:"required"`
@@ -218,4 +225,3 @@ func (s *AppService) GetApplication(ctx context.Context, appID string) (*domain.
 
 	return &app, nil
 }
-

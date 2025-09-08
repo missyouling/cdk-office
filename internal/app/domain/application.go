@@ -18,19 +18,7 @@ type Application struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
-// QRCode represents a QR code in the system
-type QRCode struct {
-	ID          string    `json:"id" gorm:"primaryKey"`
-	AppID       string    `json:"app_id" gorm:"index"`
-	Name        string    `json:"name" gorm:"size:100"`
-	Content     string    `json:"content" gorm:"type:text"`
-	Type        string    `json:"type" gorm:"size:20"` // static or dynamic
-	URL         string    `json:"url" gorm:"size:500"`
-	ImagePath   string    `json:"image_path" gorm:"size:500"`
-	CreatedBy   string    `json:"created_by" gorm:"size:50"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-}
+
 
 // FormData represents a form in the system
 type FormData struct {
@@ -82,8 +70,12 @@ type BatchQRCode struct {
 	AppID       string    `json:"app_id" gorm:"index"`
 	Name        string    `json:"name" gorm:"size:100"`
 	Description string    `json:"description" gorm:"type:text"`
+	Prefix      string    `json:"prefix" gorm:"size:50"`
+	Count       int       `json:"count"`
+	Type        string    `json:"type" gorm:"size:20"` // static or dynamic
+	URLTemplate string    `json:"url_template" gorm:"size:500"`
+	Config      string    `json:"config" gorm:"type:jsonb"`
 	Status      string    `json:"status" gorm:"size:20"` // pending, generating, completed, failed
-	TotalCount  int       `json:"total_count"`
 	CreatedBy   string    `json:"created_by" gorm:"size:50"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
