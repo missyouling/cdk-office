@@ -10,6 +10,7 @@ import (
 	employee_handler "cdk-office/internal/employee/handler"
 	business_handler "cdk-office/internal/business/handler"
 	"cdk-office/internal/shared/cache"
+	"cdk-office/internal/shared/database"
 	"cdk-office/internal/shared/middleware"
 	"cdk-office/pkg/config"
 	"cdk-office/pkg/jwt"
@@ -25,8 +26,8 @@ func main() {
 	// logger.Init() // Logger doesn't have Init function
 
 	// Initialize database
-	// db := config.InitDatabase() // Config doesn't have InitDatabase function
-	// database.InitDB(db)
+	db := config.InitDatabase()
+	database.InitDB(db)
 
 	// Initialize Redis cache
 	cache.InitRedis()

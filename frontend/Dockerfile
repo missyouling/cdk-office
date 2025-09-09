@@ -22,16 +22,25 @@ COPY . .
 RUN pnpm build
 
 # Production stage
-FROM nginx:alpine
+FROM node:18-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
+
+# Install pnpm globally
+RUN npm install -g pnpm
+
+# Install production dependencies only
+RUN pnpm install --prod
 
 # Copy built files from builder stage
-COPY --from=builder /app/dist /usr/share/nginx/html
-
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/nginx.conf
+COPY --from=builder /app/.next ./.next
 
 # Expose port
 EXPOSE 3000
 
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Start the application
+CMD ["pnpm", "start"]

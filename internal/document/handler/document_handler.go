@@ -28,6 +28,13 @@ func NewDocumentHandler() *DocumentHandler {
 	}
 }
 
+// NewDocumentHandlerWithService creates a new instance of DocumentHandler with a specific service
+func NewDocumentHandlerWithService(documentService service.DocumentServiceInterface) *DocumentHandler {
+	return &DocumentHandler{
+		documentService: documentService,
+	}
+}
+
 // UploadRequest represents the request for uploading a document
 type UploadRequest struct {
 	Title       string `json:"title" binding:"required"`

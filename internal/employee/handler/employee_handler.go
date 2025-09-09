@@ -31,6 +31,13 @@ func NewEmployeeHandler() *EmployeeHandler {
 	}
 }
 
+// NewEmployeeHandlerWithService creates a new instance of EmployeeHandler with a specific service
+func NewEmployeeHandlerWithService(employeeService service.EmployeeServiceInterface) *EmployeeHandler {
+	return &EmployeeHandler{
+		employeeService: employeeService,
+	}
+}
+
 // CreateEmployeeRequest represents the request for creating an employee
 type CreateEmployeeRequest struct {
 	UserID     string    `json:"user_id" binding:"required"`

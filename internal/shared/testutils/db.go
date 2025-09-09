@@ -32,8 +32,27 @@ func SetupTestDB() *gorm.DB {
 	db.AutoMigrate(&appdomain.FormDesign{})
 	db.AutoMigrate(&documentdomain.Document{})
 	db.AutoMigrate(&documentdomain.DocumentVersion{})
+	db.AutoMigrate(&documentdomain.DocumentCategory{})
+	db.AutoMigrate(&documentdomain.DocumentCategoryRelation{})
 	db.AutoMigrate(&employeedomain.Employee{})
 	db.AutoMigrate(&employeedomain.Department{})
+	db.AutoMigrate(&employeedomain.PerformanceReview{})
+	db.AutoMigrate(&employeedomain.TerminationRecord{})
+	db.AutoMigrate(&employeedomain.EmployeeSurvey{})
+	db.AutoMigrate(&employeedomain.SurveyResponse{})
+	db.AutoMigrate(&employeedomain.SurveyQuestion{})
+	// Note: EmployeeLifecycleEvent is defined in service package, so we can't auto-migrate it here
+	// We'll create the table manually
+	db.Exec(`CREATE TABLE IF NOT EXISTS employee_lifecycle_events (
+		id TEXT PRIMARY KEY,
+		employee_id TEXT,
+		event_type TEXT,
+		old_value TEXT,
+		new_value TEXT,
+		effective_date DATETIME,
+		reason TEXT,
+		created_at DATETIME
+	)`)
 
 	// Initialize the database connection for testing
 	database.InitDB(db)

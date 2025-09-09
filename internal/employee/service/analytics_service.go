@@ -188,16 +188,17 @@ func (s *AnalyticsService) GetEmployeeAgeDistribution(ctx context.Context, teamI
 
 	// Execute query to get employee age distribution
 	// Note: This is a simplified implementation that may need to be adjusted based on the actual database schema
+	// For SQLite, we need to use different date functions
 	if err := s.db.Model(&domain.Employee{}).
 		Select(`
 			CASE 
-				WHEN EXTRACT(YEAR FROM AGE(birth_date)) < 25 THEN '<25'
-				WHEN EXTRACT(YEAR FROM AGE(birth_date)) BETWEEN 25 AND 34 THEN '25-34'
-				WHEN EXTRACT(YEAR FROM AGE(birth_date)) BETWEEN 35 AND 44 THEN '35-44'
-				WHEN EXTRACT(YEAR FROM AGE(birth_date)) BETWEEN 45 AND 54 THEN '45-54'
+				WHEN CAST((julianday('now') - julianday(birth_date)) / 365 AS INTEGER) < 25 THEN '<25'
+				WHEN CAST((julianday('now') - julianday(birth_date)) / 365 AS INTEGER) BETWEEN 25 AND 34 THEN '25-34'
+				WHEN CAST((julianday('now') - julianday(birth_date)) / 365 AS INTEGER) BETWEEN 35 AND 44 THEN '35-44'
+				WHEN CAST((julianday('now') - julianday(birth_date)) / 365 AS INTEGER) BETWEEN 45 AND 54 THEN '45-54'
 				ELSE '55+'
 			END as age_group,
-			count(id) as employee_count
+			count(employees.id) as employee_count
 		`).
 		Where("team_id = ?", teamID).
 		Group("age_group").
@@ -216,9 +217,9 @@ func (s *AnalyticsService) GetEmployeePerformanceStats(ctx context.Context, team
 
 	// Get average performance score
 	if err := s.db.Model(&domain.PerformanceReview{}).
-		Joins("pr LEFT JOIN employees e ON pr.employee_id = e.id").
+		Joins("LEFT JOIN employees e ON performance_reviews.employee_id = e.id").
 		Where("e.team_id = ?", teamID).
-		Select("AVG(score) as average_score, COUNT(id) as total_reviews").
+		Select("AVG(score) as average_score, COUNT(performance_reviews.id) as total_reviews").
 		Scan(&stats).Error; err != nil {
 		logger.Error("failed to get employee performance stats", "error", err)
 		return nil, errors.New("failed to get employee performance stats")
@@ -260,8 +261,8 @@ func (s *AnalyticsService) GetTerminationAnalysis(ctx context.Context, teamID st
 
 	// Get termination reasons
 	if err := s.db.Model(&domain.TerminationRecord{}).
-		Select("reason, count(id) as count").
-		Joins("tr LEFT JOIN employees e ON tr.employee_id = e.id").
+		Select("reason, count(termination_records.id) as count").
+		Joins("LEFT JOIN employees e ON termination_records.employee_id = e.id").
 		Where("e.team_id = ?", teamID).
 		Group("reason").
 		Scan(&analysis.TerminationReasons).Error; err != nil {

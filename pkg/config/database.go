@@ -33,6 +33,30 @@ func GetDatabaseConfig() *DatabaseConfig {
 
 // InitDatabase initializes the database connection with connection pooling
 func InitDatabase() *gorm.DB {
+	// Check if DATABASE_URL environment variable is set
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL != "" {
+		// Use DATABASE_URL for connection
+		db, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{})
+		if err != nil {
+			log.Fatal("Failed to connect to database:", err)
+		}
+
+		// Get the underlying SQL database connection
+		sqlDB, err := db.DB()
+		if err != nil {
+			log.Fatal("Failed to get database instance:", err)
+		}
+
+		// Configure connection pool
+		sqlDB.SetMaxIdleConns(10)           // Maximum number of idle connections
+		sqlDB.SetMaxOpenConns(100)          // Maximum number of open connections
+		sqlDB.SetConnMaxLifetime(0)         // Maximum amount of time a connection may be reused (0 means no limit)
+
+		return db
+	}
+
+	// Fallback to individual environment variables
 	config := GetDatabaseConfig()
 
 	// Create connection string

@@ -17,7 +17,12 @@ type AuthMiddlewareInterface interface {
 // AuthMiddleware implements the AuthMiddlewareInterface
 type AuthMiddleware struct {
 	jwtManager      *jwt.JWTManager
-	tokenBlacklist  *jwt.TokenBlacklist
+	tokenBlacklist  TokenBlacklistInterface
+}
+
+// TokenBlacklistInterface defines the interface for token blacklist
+type TokenBlacklistInterface interface {
+	IsBlacklisted(token string) (bool, error)
 }
 
 // NewAuthMiddleware creates a new instance of AuthMiddleware
@@ -25,6 +30,14 @@ func NewAuthMiddleware(jwtManager *jwt.JWTManager) *AuthMiddleware {
 	return &AuthMiddleware{
 		jwtManager:     jwtManager,
 		tokenBlacklist: jwt.NewTokenBlacklist(),
+	}
+}
+
+// NewAuthMiddlewareWithBlacklist creates a new instance of AuthMiddleware with a custom blacklist
+func NewAuthMiddlewareWithBlacklist(jwtManager *jwt.JWTManager, tokenBlacklist TokenBlacklistInterface) *AuthMiddleware {
+	return &AuthMiddleware{
+		jwtManager:     jwtManager,
+		tokenBlacklist: tokenBlacklist,
 	}
 }
 
@@ -49,18 +62,20 @@ func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
 		// Extract the token
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
-		// Check if token is blacklisted
-		isBlacklisted, err := m.tokenBlacklist.IsBlacklisted(tokenString)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check token status"})
-			c.Abort()
-			return
-		}
+		// Check if token is blacklisted (if blacklist is available)
+		if m.tokenBlacklist != nil {
+			isBlacklisted, err := m.tokenBlacklist.IsBlacklisted(tokenString)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check token status"})
+				c.Abort()
+				return
+			}
 
-		if isBlacklisted {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "token is invalid"})
-			c.Abort()
-			return
+			if isBlacklisted {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "token is invalid"})
+				c.Abort()
+				return
+			}
 		}
 
 		// Verify the token

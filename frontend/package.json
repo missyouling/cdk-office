@@ -1,0 +1,22 @@
+{
+  "name": "cdk-office-frontend",
+  "version": "1.0.0",
+  "description": "CDK-Office Frontend",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "15",
+    "react": "19",
+    "react-dom": "19"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "eslint": "^8.0.0",
+    "eslint-config-next": "15"
+  }
+}
